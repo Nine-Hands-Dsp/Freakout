@@ -46,8 +46,9 @@ clic droit > MIDI map > « Reset MIDI to defaults » revient aux CC 20-25. Assig
 
 ## Fenêtre
 
-Même taille par défaut qu'Echoflex (391 × 493), impossible de la réduire en dessous ; clic droit : taille
-(défaut / 75 / 100 %), presets, sensibilité de déclenchement, mode du footswitch MIDI, table MIDI.
+Même taille par défaut qu'Echoflex (391 × 493), impossible de la réduire en dessous ; clic droit : **Plugin size**
+(60 / 75 / 100 %, la taille par défaut marquée « (default) » ; **Default size (new windows)** choisit la taille
+d'ouverture des nouvelles fenêtres, commune à toutes les instances, et redimensionne aussi la fenêtre courante), presets, sensibilité de déclenchement, mode du footswitch MIDI, table MIDI.
 
 **Anti-gel v2** : rendu logiciel forcé sous Windows, aucun calcul lourd dans `paint()`, caches reconstruits
 par le timer, chien de garde de redessin, aucun appel à l'hôte depuis le thread audio.
@@ -61,3 +62,4 @@ Polices : Bebas Neue et Barlow Condensed (licence SIL OFL, `assets/fonts`).
 
 - v1.0.2 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v1.1.0 : MIDI Learn au clic droit sur chaque commande (Clear MIDI, assignations sauvegardées avec le projet)
+- v1.2.0 : clic droit > Plugin size > Default size (new windows) : taille par défaut des nouvelles fenêtres au choix, comme dans Octopus
