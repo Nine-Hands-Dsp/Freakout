@@ -1,5 +1,7 @@
 # FREAKOUT (Studio Wiga) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
 # Usage : python3 tools/manual.py <dossier des captures (tools/render)> <fichier PDF de sortie>
+#   ou   : python3 tools/manual.py tools/manual_assets <fichier PDF> (images deja composees, reprises de la notice v1.1.0 :
+#          freakout_annotated / knobs / ctl / leds / disp / cover_cutout.png)
 import os, sys, json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -16,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "1.1.0"
+VERSION = "1.2.1"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -29,75 +31,80 @@ DARK = colors.HexColor("#1B1C20"); GREY = colors.HexColor("#686A72"); LIGHT = co
 
 LAY = json.load(open(os.path.join(ROOT, "tools", "layout.json")))
 
-def shot(name): return Image.open(os.path.join(SHOTS, name)).convert("RGB")
-K = shot("freakout_status.png").height / 958.0          # px par unite 760 x 958
+PREBUILT = not os.path.exists(os.path.join(SHOTS, "freakout_status.png"))
+if PREBUILT:   # images deja composees (tools/manual_assets, reprises de la notice precedente)
+    annotated, knobs_img, ctl_img, leds_img, disp_img, cover = (os.path.join(SHOTS, "freakout_" + n + ".png")
+        for n in ("annotated", "knobs", "ctl", "leds", "disp", "cover_cutout"))
+else:
+    def shot(name): return Image.open(os.path.join(SHOTS, name)).convert("RGB")
+    K = shot("freakout_status.png").height / 958.0          # px par unite 760 x 958
 
-# ---------- capture annotee ----------
-src = shot("freakout_status.png")
-ann = src.copy(); dr = ImageDraw.Draw(ann)
-fnt = ImageFont.truetype(os.path.join(FONTS, "Poppins-Bold.ttf"), 30)
-led_mid = LAY["leds"][4]
-marks = [  # numero, x, y (unites), decalage de la pastille
-    (1, led_mid[0] - 50, led_mid[1]), (2, LAY["toggles"]["momentary"][0] + 52, LAY["toggles"]["momentary"][1] - 10),
-    (3, LAY["toggles"]["dry"][0] + 52, LAY["toggles"]["dry"][1] - 10),
-    (4, LAY["cap"][0][0] - 5, LAY["cap"][0][1] - 5), (5, LAY["skirt"][0][0] + 66, LAY["skirt"][0][1] - 50),
-    (6, LAY["type"][0][0] - 70, LAY["type"][0][1] - 50), (7, 380, 470), (8, 380, 548),
-    (9, LAY["fs"][0] + 75, LAY["fs"][1] - 50), (10, 132, 470), (11, 628, 470)]
-for n, x, y in marks:
-    cx, cy, r = x * K, y * K, 24
-    dr.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255), outline=(214, 48, 28), width=5)
-    dr.text((cx, cy + 1), str(n), font=fnt, fill=(27, 28, 32), anchor="mm")
-annotated = os.path.join(TMP, "freakout_annotated.png"); ann.save(annotated)
+    # ---------- capture annotee ----------
+    src = shot("freakout_status.png")
+    ann = src.copy(); dr = ImageDraw.Draw(ann)
+    fnt = ImageFont.truetype(os.path.join(FONTS, "Poppins-Bold.ttf"), 30)
+    led_mid = LAY["leds"][4]
+    marks = [  # numero, x, y (unites), decalage de la pastille
+        (1, led_mid[0] - 50, led_mid[1]), (2, LAY["toggles"]["momentary"][0] + 52, LAY["toggles"]["momentary"][1] - 10),
+        (3, LAY["toggles"]["dry"][0] + 52, LAY["toggles"]["dry"][1] - 10),
+        (4, LAY["cap"][0][0] - 5, LAY["cap"][0][1] - 5), (5, LAY["skirt"][0][0] + 66, LAY["skirt"][0][1] - 50),
+        (6, LAY["type"][0][0] - 70, LAY["type"][0][1] - 50), (7, 380, 470), (8, 380, 548),
+        (9, LAY["fs"][0] + 75, LAY["fs"][1] - 50), (10, 132, 470), (11, 628, 470)]
+    for n, x, y in marks:
+        cx, cy, r = x * K, y * K, 24
+        dr.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255), outline=(214, 48, 28), width=5)
+        dr.text((cx, cy + 1), str(n), font=fnt, fill=(27, 28, 32), anchor="mm")
+    annotated = os.path.join(TMP, "freakout_annotated.png"); ann.save(annotated)
 
-def crop_u(img_, box):
-    k = img_.height / 958.0                       # chaque capture a sa propre taille
-    return img_.crop(tuple(int(v * k) for v in box)).resize((int((box[2] - box[0]) * 2), int((box[3] - box[1]) * 2)), Image.LANCZOS)
-def strip(images, path, gap=16):
-    h = max(i.height for i in images)
-    s = Image.new("RGB", (sum(i.width for i in images) + gap * (len(images) - 1), h), (255, 255, 255))
-    x = 0
-    for i in images: s.paste(i, (x, 0)); x += i.width + gap
-    s.save(path); return path
+    def crop_u(img_, box):
+        k = img_.height / 958.0                       # chaque capture a sa propre taille
+        return img_.crop(tuple(int(v * k) for v in box)).resize((int((box[2] - box[0]) * 2), int((box[3] - box[1]) * 2)), Image.LANCZOS)
+    def strip(images, path, gap=16):
+        h = max(i.height for i in images)
+        s = Image.new("RGB", (sum(i.width for i in images) + gap * (len(images) - 1), h), (255, 255, 255))
+        x = 0
+        for i in images: s.paste(i, (x, 0)); x += i.width + gap
+        s.save(path); return path
 
-# echelle de LED : effet actif (LED centrale), montee du larsen, pleine intensite
-lb = (186, 70, 270, 440)
-leds_img = strip([crop_u(shot(p), lb) for p in ("freakout_default.png", "freakout_bypass.png", "freakout_bloom.png", "freakout_full.png")],
-                 os.path.join(TMP, "freakout_leds.png"))
-# inverseurs (OFF / ON) et footswitch (relache / enfonce)
-tb = (285, 120, 380, 420)
-fb = (318, 685, 446, 810)
-ctl_img = strip([crop_u(shot("freakout_full.png"), tb), crop_u(shot("freakout_pressed.png"), tb),
-                 crop_u(shot("freakout_full.png"), fb), crop_u(shot("freakout_pressed.png"), fb)], os.path.join(TMP, "freakout_ctl.png"))
-# ecran
-disp_img = os.path.join(TMP, "freakout_disp.png")
-strip([crop_u(shot("freakout_bloom.png"), (172, 460, 590, 548)), crop_u(shot("freakout_status.png"), (172, 460, 590, 548))], disp_img, gap=10)
-# potards
-knobs_img = strip([crop_u(shot("freakout_full.png"), (440, 95, 582, 270)), crop_u(shot("freakout_full.png"), (446, 300, 578, 455))],
-                  os.path.join(TMP, "freakout_knobs.png"))
+    # echelle de LED : effet actif (LED centrale), montee du larsen, pleine intensite
+    lb = (186, 70, 270, 440)
+    leds_img = strip([crop_u(shot(p), lb) for p in ("freakout_default.png", "freakout_bypass.png", "freakout_bloom.png", "freakout_full.png")],
+                     os.path.join(TMP, "freakout_leds.png"))
+    # inverseurs (OFF / ON) et footswitch (relache / enfonce)
+    tb = (285, 120, 380, 420)
+    fb = (318, 685, 446, 810)
+    ctl_img = strip([crop_u(shot("freakout_full.png"), tb), crop_u(shot("freakout_pressed.png"), tb),
+                     crop_u(shot("freakout_full.png"), fb), crop_u(shot("freakout_pressed.png"), fb)], os.path.join(TMP, "freakout_ctl.png"))
+    # ecran
+    disp_img = os.path.join(TMP, "freakout_disp.png")
+    strip([crop_u(shot("freakout_bloom.png"), (172, 460, 590, 548)), crop_u(shot("freakout_status.png"), (172, 460, 590, 548))], disp_img, gap=10)
+    # potards
+    knobs_img = strip([crop_u(shot("freakout_full.png"), (440, 95, 582, 270)), crop_u(shot("freakout_full.png"), (446, 300, 578, 455))],
+                      os.path.join(TMP, "freakout_knobs.png"))
 
-# ---------- couverture : pedale detouree, reflet au sol, halo rouge tres doux ----------
-cov = shot("freakout_full.png")
-msk = Image.open(os.path.join(ROOT, "tools", "pedal_mask.png")).convert("L").resize(cov.size, Image.LANCZOS)
-cut = Image.new("RGBA", cov.size, (0, 0, 0, 0)); cut.paste(cov, (0, 0), msk)
-cut = cut.crop(cut.getbbox())
-cw, ch = cut.size
-pad = int(cw * 0.16)
-canvas = Image.new("RGBA", (cw + 2 * pad, int(ch * 1.30) + pad), (0, 0, 0, 255))
-yy, xx = np.mgrid[0:canvas.height, 0:canvas.width].astype(np.float64)
-gcx, gcy = canvas.width / 2, pad + ch * 0.42
-glow = np.exp(-(((xx - gcx) / (cw * 0.62)) ** 2 + ((yy - gcy) / (ch * 0.48)) ** 2)) * 30
-edge = np.clip(np.minimum.reduce([xx, canvas.width - 1 - xx, yy, canvas.height - 1 - yy]) / (pad * 0.9), 0, 1)
-glow *= edge ** 2
-halo = np.dstack([glow * 1.0, glow * 0.22, glow * 0.14, np.full_like(glow, 255)]).astype(np.uint8)
-canvas = Image.alpha_composite(canvas, Image.fromarray(halo, "RGBA"))
-refl = cut.transpose(Image.FLIP_TOP_BOTTOM)
-ra = np.array(refl).astype(np.float64)
-fade = np.clip(1 - np.arange(refl.height) / (refl.height * 0.22), 0, 1) ** 1.6 * 0.22
-ra[..., 3] *= fade[:, None]
-canvas.alpha_composite(Image.fromarray(ra.astype(np.uint8), "RGBA"), (pad, pad + ch + 6))
-canvas.alpha_composite(cut, (pad, pad))
-canvas = canvas.crop((0, 0, canvas.width, pad + int(ch * 1.20)))
-cover = os.path.join(TMP, "freakout_cover_cutout.png"); canvas.convert("RGB").save(cover)
+    # ---------- couverture : pedale detouree, reflet au sol, halo rouge tres doux ----------
+    cov = shot("freakout_full.png")
+    msk = Image.open(os.path.join(ROOT, "tools", "pedal_mask.png")).convert("L").resize(cov.size, Image.LANCZOS)
+    cut = Image.new("RGBA", cov.size, (0, 0, 0, 0)); cut.paste(cov, (0, 0), msk)
+    cut = cut.crop(cut.getbbox())
+    cw, ch = cut.size
+    pad = int(cw * 0.16)
+    canvas = Image.new("RGBA", (cw + 2 * pad, int(ch * 1.30) + pad), (0, 0, 0, 255))
+    yy, xx = np.mgrid[0:canvas.height, 0:canvas.width].astype(np.float64)
+    gcx, gcy = canvas.width / 2, pad + ch * 0.42
+    glow = np.exp(-(((xx - gcx) / (cw * 0.62)) ** 2 + ((yy - gcy) / (ch * 0.48)) ** 2)) * 30
+    edge = np.clip(np.minimum.reduce([xx, canvas.width - 1 - xx, yy, canvas.height - 1 - yy]) / (pad * 0.9), 0, 1)
+    glow *= edge ** 2
+    halo = np.dstack([glow * 1.0, glow * 0.22, glow * 0.14, np.full_like(glow, 255)]).astype(np.uint8)
+    canvas = Image.alpha_composite(canvas, Image.fromarray(halo, "RGBA"))
+    refl = cut.transpose(Image.FLIP_TOP_BOTTOM)
+    ra = np.array(refl).astype(np.float64)
+    fade = np.clip(1 - np.arange(refl.height) / (refl.height * 0.22), 0, 1) ** 1.6 * 0.22
+    ra[..., 3] *= fade[:, None]
+    canvas.alpha_composite(Image.fromarray(ra.astype(np.uint8), "RGBA"), (pad, pad + ch + 6))
+    canvas.alpha_composite(cut, (pad, pad))
+    canvas = canvas.crop((0, 0, canvas.width, pad + int(ch * 1.20)))
+    cover = os.path.join(TMP, "freakout_cover_cutout.png"); canvas.convert("RGB").save(cover)
 
 def img(path, width):
     im = Image.open(path); h = width * im.height / im.width
@@ -201,20 +208,20 @@ T["en"] = dict(
      "Every parameter can be automated in the DAW (Gain, Onset, Type, Momentary, Dry, Effect On, plus Trigger sensitivity and MIDI footswitch mode)."],
  midi_t="6. MIDI",
  midi_txt=["<b>MIDI Learn on every control</b>: right-click a control (GAIN cap, ONSET skirt, TYPE, MOMENTARY, DRY or the footswitch). The top of the menu shows <b>MIDI Learn: &lt;Name&gt; (CC n / none)</b> with the current assignment, <b>Clear MIDI: &lt;Name&gt;</b> and, while a learn is waiting, <b>Cancel MIDI learn</b>. Choose MIDI Learn, then move a pedal or knob or press a footswitch of your controller: the display shows <b>MIDI LEARN: move a control for &lt;Name&gt;</b>, then <b>&lt;Name&gt; = CC n</b> for 2 seconds.",
-           "Every right-click menu (on a control or anywhere else on the pedal) also has the <b>MIDI map</b> submenu: <b>Learn</b> for each of the 6 controls (with its current assignment), <b>Cancel MIDI learn</b> and <b>Reset MIDI to defaults (CC 20-25)</b>, plus a reminder of the map. Choosing the pending item again also cancels the learn.",
-           "A CC number can only drive one control: learning a CC that is already used removes it from the other control. Learn accepts CC 0 to 119; FreakOut listens on all MIDI channels. <b>Assignments are saved with the project</b> (and with DAW presets)."],
- midi_hdr=["Control", "Default CC", "Type"],
- midi=[["Gain (GAIN cap)", "CC 20", "Continuous 0-127; 14-bit with CC n+32 (CC 52) when the CC is 0-31"], ["Onset (ONSET skirt)", "CC 21", "Continuous 0-127; 14-bit with CC n+32 (CC 53)"],
-       ["Type", "CC 22", "7-position selector: 0-127 split into 7 equal zones (SUB to NAT HI)"],
-       ["Momentary", "CC 23", "Switch: 64 and above = ON, below 64 = OFF"], ["Dry", "CC 24", "Switch: 64 and above = ON, below 64 = OFF"],
-       ["Footswitch", "CC 25", "Footswitch: latching (127 = on / 0 = off) or toggle on each press; with MOMENTARY ON it acts while held"]],
+           "No CC is assigned by default: every control you want to drive from MIDI is assigned with MIDI Learn. Every right-click menu (on a control or anywhere else on the pedal) also has the <b>MIDI map</b> submenu: <b>Learn</b> for each of the 6 controls (with its current assignment, or <b>none</b>), <b>Cancel MIDI learn</b> and <b>Clear all MIDI assignments</b>, which removes every assignment, plus a reminder of how the controls react. Choosing the pending item again also cancels the learn.",
+           "A CC number can only drive one control: learning a CC that is already used removes it from the other control. Learn accepts CC 0 to 119; FreakOut listens on all MIDI channels. <b>Assignments are saved with the project</b> (and with DAW presets). A project made with an earlier version that still used the former factory numbers (CC 20 to 25) opens with no assignment: learn the controls you need again. A project in which you had changed an assignment keeps its assignments as saved."],
+ midi_hdr=["Control", "Type"],
+ midi=[["Gain (GAIN cap)", "Continuous 0-127; 14-bit with CC n+32 when the learnt CC is 0-31"], ["Onset (ONSET skirt)", "Continuous 0-127; 14-bit with CC n+32 when the learnt CC is 0-31"],
+       ["Type", "7-position selector: 0-127 split into 7 equal zones (SUB to NAT HI)"],
+       ["Momentary", "Switch: 64 and above = ON, below 64 = OFF"], ["Dry", "Switch: 64 and above = ON, below 64 = OFF"],
+       ["Footswitch", "Footswitch: latching (127 = on / 0 = off) or toggle on each press; with MOMENTARY ON it acts while held"]],
  midi2=["<b>MIDI footswitch mode</b>: right-click &gt; <b>Settings</b> &gt; <b>MIDI footswitch latching (127 = on / 0 = off)</b> (default) or <b>MIDI footswitch toggles on each press</b>. With MOMENTARY ON the MIDI footswitch always works while held.",
         "<b>Expression pedals</b> on GAIN or ONSET are smoothed: ramp between two messages, 14-bit CC accepted, pedal travel learnt automatically and small dead zones at both ends.",
         "<b>Program Change</b> 1-13 loads the factory presets."],
  ctl_cap="MOMENTARY / DRY switches (lever up = ON), and the footswitch released / pressed.",
  led_cap="The LED ladder: effect on (centre LED), bypass, feedback building, feedback at full strength.",
  win_t="7. Window and display",
- win=["Right-click &gt; <b>Window size</b>: <b>60 % (default)</b>, <b>75 %</b>, <b>100 %</b>. The window opens at the same default size as the other Studio Wiga single pedals and can never be made smaller; you can also drag the corner to enlarge it (proportions locked).",
+ win=["Right-click &gt; <b>Plugin size</b>: <b>60 %</b>, <b>75 %</b>, <b>100 %</b> resizes this window, and <b>(default)</b> is shown next to the default size you chose. At the bottom of the same menu, <b>Default size (new windows)</b> chooses the size at which every new FreakOut window opens (a setting shared by all instances and saved on the computer); the open window takes that size at once. The window can never be made smaller than 60 %; you can also drag the corner to enlarge it up to 150 % (proportions locked).",
       "The display shows the value of the control you just moved for 2.5 s. The rest of the time it shows what is feeding back: harmonic (H1, H2… or SUB), frequency and note name. The preset bar below works like the pedal's menu: arrows for previous / next, click the name for the full list (factory presets, 9 user slots to load or save)."],
  disp_cap="Display: live feedback information, then the value of the control being moved.",
  pre_t="8. Presets",
@@ -232,8 +239,8 @@ T["en"] = dict(
        ["Latency", "None (0 samples)"], ["Pitch range", "30 Hz to 1.6 kHz fundamental, feedback up to 8.5 kHz"],
        ["Engine", "YIN pitch detection, phase-locked harmonic oscillators, exponential bloom, natural partial selection"],
        ["Sample rates", "44.1 to 192 kHz"], ["Version", VERSION],
-       ["Window", "60 % (default, also the minimum size), 75 %, 100 %; anti-freeze v2 on Windows (software rendering, display caches rebuilt by a timer, redraw watchdog, no call to the host from the audio thread)"],
-       ["MIDI", "MIDI Learn on all 6 controls (saved with the project), defaults CC 20-25 (14-bit on CC 52-53), Program Change 1-13, all channels"]],
+       ["Window", "60 % / 75 % / 100 % (Plugin size), default size of new windows to choose, up to 150 %, never smaller than 60 %; anti-freeze v2 on Windows (software rendering, display caches rebuilt by a timer, redraw watchdog, no call to the host from the audio thread)"],
+       ["MIDI", "MIDI Learn on all 6 controls (saved with the project), no CC assigned by default, 14-bit CC (n+32), Program Change 1-13, all channels"]],
 )
 T["fr"] = dict(
  lang="FRANÇAIS", sub="Générateur de larsen harmonique naturel", ver="Notice d'utilisation · version " + VERSION,
@@ -269,20 +276,20 @@ T["fr"] = dict(
      "Tous les paramètres sont automatisables dans le DAW (Gain, Onset, Type, Momentary, Dry, Effect On, ainsi que la sensibilité de déclenchement et le mode du footswitch MIDI)."],
  midi_t="6. MIDI",
  midi_txt=["<b>MIDI Learn sur toutes les commandes</b> : faites un clic droit sur une commande (chapeau GAIN, jupe ONSET, TYPE, MOMENTARY, DRY ou le footswitch). Le haut du menu affiche <b>MIDI Learn: &lt;Nom&gt; (CC n / none)</b> avec l'assignation actuelle, <b>Clear MIDI: &lt;Nom&gt;</b> et, tant qu'un apprentissage est en attente, <b>Cancel MIDI learn</b>. Choisissez MIDI Learn puis bougez une pédale, un bouton ou appuyez sur un footswitch de votre contrôleur : l'écran affiche <b>MIDI LEARN: move a control for &lt;Nom&gt;</b>, puis <b>&lt;Nom&gt; = CC n</b> pendant 2 secondes.",
-           "Chaque menu clic droit (sur une commande ou ailleurs sur la pédale) contient aussi le sous-menu <b>MIDI map</b> : <b>Learn</b> pour chacune des 6 commandes (avec son assignation actuelle), <b>Cancel MIDI learn</b> et <b>Reset MIDI to defaults (CC 20-25)</b>, plus un rappel de la table. Choisir de nouveau la commande en attente annule aussi l'apprentissage.",
-           "Un numéro de CC ne pilote qu'une seule commande : apprendre un CC déjà utilisé le retire de l'autre commande. L'apprentissage accepte les CC 0 à 119 ; FreakOut écoute tous les canaux MIDI. <b>Les assignations sont sauvegardées avec le projet</b> (et avec les presets du DAW)."],
- midi_hdr=["Commande", "CC par défaut", "Type"],
- midi=[["Gain (chapeau GAIN)", "CC 20", "Continu 0-127 ; 14 bits avec CC n+32 (CC 52) si le CC est entre 0 et 31"], ["Onset (jupe ONSET)", "CC 21", "Continu 0-127 ; 14 bits avec CC n+32 (CC 53)"],
-       ["Type", "CC 22", "Sélecteur à 7 positions : 0-127 découpé en 7 zones égales (SUB à NAT HI)"],
-       ["Momentary", "CC 23", "Bascule : 64 et plus = ON, moins de 64 = OFF"], ["Dry", "CC 24", "Bascule : 64 et plus = ON, moins de 64 = OFF"],
-       ["Footswitch", "CC 25", "Footswitch : à accrochage (127 = on / 0 = off) ou bascule à chaque appui ; avec MOMENTARY ON, il agit tant qu'il est enfoncé"]],
+           "Aucun CC n'est assigné par défaut : chaque commande à piloter en MIDI s'assigne avec le MIDI Learn. Chaque menu clic droit (sur une commande ou ailleurs sur la pédale) contient aussi le sous-menu <b>MIDI map</b> : <b>Learn</b> pour chacune des 6 commandes (avec son assignation actuelle, ou <b>none</b>), <b>Cancel MIDI learn</b> et <b>Clear all MIDI assignments</b>, qui efface toutes les assignations, plus un rappel de la réaction des commandes. Choisir de nouveau la commande en attente annule aussi l'apprentissage.",
+           "Un numéro de CC ne pilote qu'une seule commande : apprendre un CC déjà utilisé le retire de l'autre commande. L'apprentissage accepte les CC 0 à 119 ; FreakOut écoute tous les canaux MIDI. <b>Les assignations sont sauvegardées avec le projet</b> (et avec les presets du DAW). Un projet fait avec une version précédente qui utilisait encore les anciens numéros d'usine (CC 20 à 25) s'ouvre sans aucune assignation : réapprenez les commandes voulues. Un projet où vous aviez changé une assignation garde ses assignations telles qu'enregistrées."],
+ midi_hdr=["Commande", "Type"],
+ midi=[["Gain (chapeau GAIN)", "Continu 0-127 ; 14 bits avec CC n+32 si le CC appris est entre 0 et 31"], ["Onset (jupe ONSET)", "Continu 0-127 ; 14 bits avec CC n+32 si le CC appris est entre 0 et 31"],
+       ["Type", "Sélecteur à 7 positions : 0-127 découpé en 7 zones égales (SUB à NAT HI)"],
+       ["Momentary", "Bascule : 64 et plus = ON, moins de 64 = OFF"], ["Dry", "Bascule : 64 et plus = ON, moins de 64 = OFF"],
+       ["Footswitch", "Footswitch : à accrochage (127 = on / 0 = off) ou bascule à chaque appui ; avec MOMENTARY ON, il agit tant qu'il est enfoncé"]],
  midi2=["<b>Mode du footswitch MIDI</b> : clic droit &gt; <b>Settings</b> &gt; <b>MIDI footswitch latching (127 = on / 0 = off)</b> (par défaut) ou <b>MIDI footswitch toggles on each press</b>. Avec MOMENTARY ON, le footswitch MIDI agit toujours tant qu'il est enfoncé.",
         "<b>Pédales d'expression</b> sur GAIN ou ONSET : mouvement lissé (rampe entre deux messages), CC 14 bits accepté, course de la pédale apprise automatiquement et petites zones mortes aux deux butées.",
         "<b>Program Change</b> 1 à 13 : presets d'usine."],
  ctl_cap="Inverseurs MOMENTARY / DRY (levier en haut = ON), et footswitch relâché / enfoncé.",
  led_cap="L'échelle de LED : effet en marche (LED centrale), bypass, larsen qui monte, larsen à pleine intensité.",
  win_t="7. Fenêtre et écran",
- win=["Clic droit &gt; <b>Window size</b> : <b>60 % (default)</b>, <b>75 %</b>, <b>100 %</b>. La fenêtre s'ouvre à la même taille par défaut que les autres pédales simples Studio Wiga et ne peut jamais être réduite en dessous ; on peut aussi tirer le coin pour l'agrandir (proportions bloquées).",
+ win=["Clic droit &gt; <b>Plugin size</b> : <b>60 %</b>, <b>75 %</b>, <b>100 %</b> redimensionne cette fenêtre, et <b>(default)</b> est indiqué à côté de la taille par défaut choisie. En bas du même menu, <b>Default size (new windows)</b> choisit la taille d'ouverture de toutes les nouvelles fenêtres de FreakOut (réglage commun à toutes les instances, enregistré sur l'ordinateur) ; la fenêtre ouverte prend aussitôt cette taille. La fenêtre ne peut jamais être réduite sous 60 % ; on peut aussi tirer le coin pour l'agrandir jusqu'à 150 % (proportions bloquées).",
       "L'écran affiche pendant 2,5 s la valeur de la commande que vous venez de bouger. Le reste du temps, il montre ce qui larsène : harmonique (H1, H2… ou SUB), fréquence et nom de la note. La barre de presets dessous fonctionne comme un menu de pédale : flèches pour précédent / suivant, clic sur le nom pour la liste complète (presets d'usine, 9 emplacements utilisateur à charger ou enregistrer)."],
  disp_cap="Écran : informations du larsen en direct, puis valeur de la commande qu'on règle.",
  pre_t="8. Presets",
@@ -300,8 +307,8 @@ T["fr"] = dict(
        ["Latence", "Aucune (0 échantillon)"], ["Plage de hauteur", "Fondamentale de 30 Hz à 1,6 kHz, larsen jusqu'à 8,5 kHz"],
        ["Moteur", "Détection de hauteur YIN, oscillateurs harmoniques verrouillés en phase, montée exponentielle, choix naturel des partiels"],
        ["Fréquences", "44,1 à 192 kHz"], ["Version", VERSION],
-       ["Fenêtre", "60 % (par défaut, c'est aussi la taille minimale), 75 %, 100 % ; anti-gel v2 sous Windows (rendu logiciel, caches d'affichage refaits par un timer, chien de garde de redessin, aucun appel à l'hôte depuis le thread audio)"],
-       ["MIDI", "MIDI Learn sur les 6 commandes (sauvegardé avec le projet), CC 20 à 25 par défaut (14 bits sur CC 52-53), Program Change 1 à 13, tous canaux"]],
+       ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; anti-gel v2 sous Windows (rendu logiciel, caches d'affichage refaits par un timer, chien de garde de redessin, aucun appel à l'hôte depuis le thread audio)"],
+       ["MIDI", "MIDI Learn sur les 6 commandes (sauvegardé avec le projet), aucun CC assigné par défaut, CC 14 bits (n+32), Program Change 1 à 13, tous canaux"]],
 )
 
 W = A4[0] - 36 * mm
@@ -336,7 +343,7 @@ def section(lang):
     f.append(KeepTogether([Spacer(1, 2 * mm), img(ctl_img, W * 0.66), P(t["ctl_cap"], "small")]))
     f.append(KeepTogether([Spacer(1, 3 * mm), img(leds_img, W * 0.42), P(t["led_cap"], "small")]))
     f.append(P(t["midi_t"], "h1")); f += [P(x) for x in t["midi_txt"]]
-    f.append(Spacer(1, 2 * mm)); f.append(KeepTogether([table([t["midi_hdr"]] + t["midi"], [36 * mm, 24 * mm, W - 60 * mm])])); f.append(Spacer(1, 3 * mm))
+    f.append(Spacer(1, 2 * mm)); f.append(KeepTogether([table([t["midi_hdr"]] + t["midi"], [40 * mm, W - 40 * mm])])); f.append(Spacer(1, 3 * mm))
     f += bullets(t["midi2"])
     f.append(P(t["win_t"], "h1")); f += [P(x) for x in t["win"]]
     f.append(KeepTogether([img(disp_img, W * 0.92), P(t["disp_cap"], "small")]))
