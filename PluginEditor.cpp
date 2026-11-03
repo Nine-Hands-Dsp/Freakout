@@ -808,7 +808,7 @@ void FreakoutAudioProcessorEditor::handleMidiMenu (int r)
         proc.learnTarget.store (proc.learnTarget.load() == r - 1000 ? -1 : r - 1000);   // re-cliquer annule
     else if (r >= 1100 && r < 1100 + FreakoutAudioProcessor::numLearn) proc.ccMap[r - 1100].store (-1);
     else if (r == 1200) proc.learnTarget.store (-1);
-    else if (r == 1201) { proc.learnTarget.store (-1); proc.resetMidiMap(); }
+    else if (r == 1201) { proc.learnTarget.store (-1); proc.clearMidiMap(); }
 }
 
 void FreakoutAudioProcessorEditor::showContextMenu (int learnIdx)
@@ -869,7 +869,7 @@ void FreakoutAudioProcessorEditor::showContextMenu (int learnIdx)
     }
     midi.addSeparator();
     if (proc.learnTarget.load() >= 0) midi.addItem (1200, "Cancel MIDI learn");
-    midi.addItem (1201, "Reset MIDI to defaults (CC 20-25)");
+    midi.addItem (1201, "Clear all MIDI assignments");
     midi.addSeparator();
     midi.addItem (902, "Type: 7 zones / Momentary, Dry: 64+ on", false);
     midi.addItem (906, "CC n+32 = fine (14-bit) for knobs on CC 0-31", false);

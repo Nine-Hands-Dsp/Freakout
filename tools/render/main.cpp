@@ -83,8 +83,9 @@ int main (int argc, char** argv)
         std::printf ("%s\n", f.getFullPathName().toRawUTF8());
     }
 
-    // pedale d'expression : course 2..116 sur CC 20 (gain)
+    // pedale d'expression : course 2..116 sur CC 20 (gain) ; aucun CC par defaut -> CC 20 assigne au gain comme par un MIDI Learn
     {
+        proc.ccMap[0].store (20);
         auto sendCC = [&] (int v)
         {
             AudioBuffer<float> b (2, 256); b.clear(); MidiBuffer m; m.addEvent (MidiMessage::controllerEvent (1, 20, v), 0);

@@ -86,7 +86,7 @@ public:
     std::atomic<float> fbHz { 0.0f };           // frequence du larsen en cours
     std::atomic<int>   fbHarmonic { 0 };        // harmonique en cours (-1 = SUB)
 
-    enum MidiMap
+    enum MidiMap                                // anciens CC d'usine (< v1.2.1), plus assignes par defaut
     {
         ccGain = 20, ccOnset = 21,
         ccType = 22,        // 0..127 -> 7 positions
@@ -98,15 +98,16 @@ public:
     static const char* knobId (int i) { return i == 0 ? "gain" : "onset"; }
 
     // v1.1 MIDI Learn : toutes les commandes de la facade (meme ordre que la file anti-gel queuedId)
-    // numeros par defaut = anciens CC fixes 20 a 25 (anciens projets et pedaliers inchanges)
+    // v1.2.1 : aucun CC assigne par defaut (MIDI Learn uniquement) ; legacyCC = ancienne table d'usine (CC 20 a 25),
+    // servant seulement a reconnaitre un ancien projet jamais modifie (table videe au chargement)
     enum LearnType { learnContinuous, learnToggle, learnSelector, learnFootswitch };
-    struct LearnDef { const char* id; const char* name; int defaultCC; int type; int positions; };
+    struct LearnDef { const char* id; const char* name; int legacyCC; int type; int positions; };
     static constexpr int numLearn = 6;
     static const LearnDef& learnDef (int i);
     std::atomic<int> ccMap[numLearn];            // numero de CC de chaque commande, -1 = non assigne
     std::atomic<int> learnTarget { -1 };         // commande en attente d'un CC (-1 = pas de learn)
     std::atomic<int> lastLearned { -1 };         // derniere commande apprise (lue et remise a -1 par la fenetre)
-    void resetMidiMap();
+    void clearMidiMap();                         // efface toutes les assignations (aucun CC par defaut)
 
 private:
     void handleMidi (juce::MidiBuffer& midi);
