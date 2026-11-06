@@ -1,7 +1,7 @@
-# FreakOut (Studio Wiga)
+# FreakOut (NINE HANDS | DSP)
 
 Plugin VST3 (Windows et macOS) de **larsen naturel** pour guitare et basse, au format pédale simple,
-d'après le fonctionnement de la DigiTech FreqOut (Natural Feedback Creator). Visuel original Studio Wiga.
+d'après le fonctionnement de la DigiTech FreqOut (Natural Feedback Creator). Visuel original NINE HANDS | DSP.
 
 ## Commandes (comme la pédale d'origine)
 

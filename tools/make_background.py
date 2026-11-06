@@ -1,5 +1,5 @@
 """
-FreakOut (Studio Wiga) - fond du plugin a partir du visuel fourni (design/source/freakout_visuel.png).
+FreakOut (NINE HANDS | DSP) - fond du plugin a partir du visuel fourni (design/source/freakout_visuel.png).
 
 Le visuel est la reference : son eclairage (lumiere douce venant du haut, legerement a gauche) est conserve.
 Ce script, dans le repere de la photo (928 x 1152), puis mis a l'echelle du cadre 1520 x 1916 (= 2 x 760 x 958) :

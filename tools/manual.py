@@ -1,4 +1,4 @@
-# FREAKOUT (Studio Wiga) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
+# FREAKOUT (NINE HANDS | DSP) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
 # Usage : python3 tools/manual.py <dossier des captures (tools/render)> <fichier PDF de sortie>
 #   ou   : python3 tools/manual.py tools/manual_assets <fichier PDF> (images deja composees, reprises de la notice v1.1.0 :
 #          freakout_annotated / knobs / ctl / leds / disp / cover_cutout.png)
@@ -177,11 +177,11 @@ T = {}
 T["en"] = dict(
  lang="ENGLISH", sub="Natural harmonic feedback generator", ver="User manual · version " + VERSION,
  intro_t="1. Introduction",
- intro=["<b>FreakOut</b> is a Studio Wiga VST3 plugin that creates real-sounding guitar feedback at any volume, clean or distorted, through headphones or a quiet amp simulator. It is modelled on the behaviour of the <b>DigiTech FreqOut</b> Natural Feedback Creator: same controls, same seven feedback types, same LED ladder, same momentary and dry switches.",
+ intro=["<b>FreakOut</b> is a NINE HANDS | DSP VST3 plugin that creates real-sounding guitar feedback at any volume, clean or distorted, through headphones or a quiet amp simulator. It is modelled on the behaviour of the <b>DigiTech FreqOut</b> Natural Feedback Creator: same controls, same seven feedback types, same LED ladder, same momentary and dry switches.",
         "Like the pedal, FreakOut follows the note you play, chooses which harmonic of that note will feed back, then makes it bloom: the feedback starts inaudible, grows exponentially as the note sustains, and saturates gently at the top. It follows vibrato, bends and legato, collapses when you mute the strings and rebuilds on every new pick attack.",
         "The pedal is entirely digital and no schematic exists; FreakOut was built from the original manual, reviews (Sound On Sound, MusicRadar, Tape Op, Guitar Interactive) and the documented behaviour of each control."],
  inst_t="2. Installation",
- inst=[("Windows", "Copy <b>FreakOut.vst3</b> to <b>C:\\Program Files\\Common Files\\VST3</b>. In Reaper: Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <i>Re-scan</i>. The plugin appears as <b>FreakOut (Studio Wiga)</b>."),
+ inst=[("Windows", "Copy <b>FreakOut.vst3</b> to <b>C:\\Program Files\\Common Files\\VST3</b>. In Reaper: Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <i>Re-scan</i>. The plugin appears as <b>FreakOut (NINE HANDS | DSP)</b>."),
        ("macOS", "Unzip the archive and copy <b>FreakOut.vst3</b> to <b>/Library/Audio/Plug-Ins/VST3</b> (or ~/Library/Audio/Plug-Ins/VST3). The build is universal (Apple Silicon and Intel) and ad hoc signed; if macOS blocks it, run <i>xattr -cr</i> on the file. Then re-scan in Reaper.")],
  ov_t="3. Interface overview",
  ov_rows=[["#", "Control", "Role"], ["1", "FEEDBACK ladder", "9 red LEDs: centre = effect on; pairs light from the centre outward as the feedback builds"],
@@ -245,11 +245,11 @@ T["en"] = dict(
 T["fr"] = dict(
  lang="FRANÇAIS", sub="Générateur de larsen harmonique naturel", ver="Notice d'utilisation · version " + VERSION,
  intro_t="1. Présentation",
- intro=["<b>FreakOut</b> est un plugin VST3 Studio Wiga qui crée un larsen de guitare naturel à n'importe quel volume, en son clair ou saturé, au casque ou avec un simulateur d'ampli à faible volume. Il reprend le fonctionnement de la <b>DigiTech FreqOut</b> (Natural Feedback Creator) : mêmes commandes, mêmes sept types de larsen, même échelle de LED, mêmes inverseurs MOMENTARY et DRY.",
+ intro=["<b>FreakOut</b> est un plugin VST3 NINE HANDS | DSP qui crée un larsen de guitare naturel à n'importe quel volume, en son clair ou saturé, au casque ou avec un simulateur d'ampli à faible volume. Il reprend le fonctionnement de la <b>DigiTech FreqOut</b> (Natural Feedback Creator) : mêmes commandes, mêmes sept types de larsen, même échelle de LED, mêmes inverseurs MOMENTARY et DRY.",
         "Comme la pédale, FreakOut suit la note jouée, choisit l'harmonique de cette note qui va larsener, puis la fait « fleurir » : le larsen part inaudible, grossit de façon exponentielle tant que la note tient, puis sature en douceur. Il suit le vibrato, les tirés et le legato, retombe quand on étouffe les cordes et se reconstruit à chaque nouvelle attaque.",
         "La pédale est entièrement numérique et aucun schéma n'existe : FreakOut a été construit d'après le manuel d'origine, les tests (Sound On Sound, MusicRadar, Tape Op, Guitar Interactive) et le comportement documenté de chaque commande."],
  inst_t="2. Installation",
- inst=[("Windows", "Copiez <b>FreakOut.vst3</b> dans <b>C:\\Program Files\\Common Files\\VST3</b>. Dans Reaper : Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <i>Re-scan</i>. Le plugin apparaît sous le nom <b>FreakOut (Studio Wiga)</b>."),
+ inst=[("Windows", "Copiez <b>FreakOut.vst3</b> dans <b>C:\\Program Files\\Common Files\\VST3</b>. Dans Reaper : Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <i>Re-scan</i>. Le plugin apparaît sous le nom <b>FreakOut (NINE HANDS | DSP)</b>."),
        ("macOS", "Décompressez l'archive et copiez <b>FreakOut.vst3</b> dans <b>/Library/Audio/Plug-Ins/VST3</b> (ou ~/Library/Audio/Plug-Ins/VST3). La version est universelle (Apple Silicon et Intel) et signée localement ; si macOS la bloque, lancez <i>xattr -cr</i> sur le fichier. Relancez ensuite le scan dans Reaper.")],
  ov_t="3. Vue d'ensemble",
  ov_rows=[["N°", "Commande", "Rôle"], ["1", "Échelle FEEDBACK", "9 LED rouges : centre = effet actif ; les paires s'allument du centre vers l'extérieur pendant la montée du larsen"],
@@ -365,12 +365,12 @@ def deco(c, doc):
     c.setFillColor(DARK); c.rect(0, A4[1] - 6 * mm, A4[0], 6 * mm, stroke=0, fill=1)
     c.setFillColor(ACC); c.rect(0, A4[1] - 6.8 * mm, A4[0], 0.8 * mm, stroke=0, fill=1)
     c.setFont("Pop", 7.5); c.setFillColor(GREY)
-    c.drawString(18 * mm, 10 * mm, "FreakOut (Studio Wiga) · v" + VERSION)
+    c.drawString(18 * mm, 10 * mm, "FreakOut (NINE HANDS | DSP) · v" + VERSION)
     c.drawRightString(A4[0] - 18 * mm, 10 * mm, str(doc.page))
     c.restoreState()
 
 doc = BaseDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=18 * mm,
-                      title="FreakOut - Manual / Notice v" + VERSION, author="Studio Wiga")
+                      title="FreakOut - Manual / Notice v" + VERSION, author="NINE HANDS | DSP")
 def cover_bg(c, doc):
     c.saveState(); c.setFillColor(colors.black); c.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
     c.setFillColor(ACC); c.rect(0, A4[1] - 3 * mm, A4[0], 3 * mm, stroke=0, fill=1); c.restoreState()

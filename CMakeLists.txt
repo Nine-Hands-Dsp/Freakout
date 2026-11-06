@@ -33,7 +33,7 @@ juce_add_binary_data(FreakOutAssets SOURCES
 set_target_properties(FreakOutAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 juce_add_plugin(FreakOut
-  COMPANY_NAME "Studio Wiga"
+  COMPANY_NAME "NINE HANDS | DSP"
   PLUGIN_MANUFACTURER_CODE Wiga
   PLUGIN_CODE WgFo
   BUNDLE_ID com.studiowiga.freakout

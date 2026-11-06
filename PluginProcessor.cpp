@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "NineHandsFolder.h"
 #include "PluginEditor.h"
 
 using namespace juce;
@@ -306,7 +307,7 @@ void FreakoutAudioProcessor::applyFactoryPreset (int index)
 File FreakoutAudioProcessor::getUserPresetFile()
 {
     return File::getSpecialLocation (File::userApplicationDataDirectory)
-             .getChildFile ("Studio Wiga").getChildFile ("FreakOut").getChildFile ("UserPresets.xml");
+             .getChildFile (nhd::folderName()).getChildFile ("FreakOut").getChildFile ("UserPresets.xml");
 }
 
 static const char* presetIds[] = { "gain", "onset", "type", "momentary", "dry" };

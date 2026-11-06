@@ -7,7 +7,7 @@
 #include "FreakoutDSP.h"
 
 //==============================================================================
-// FREAKOUT (Studio Wiga) - generateur de larsen naturel, d'apres le fonctionnement de la DigiTech FreqOut.
+// FREAKOUT (NINE HANDS | DSP) - generateur de larsen naturel, d'apres le fonctionnement de la DigiTech FreqOut.
 // Voir README.md et FreakoutDSP.h.
 //==============================================================================
 

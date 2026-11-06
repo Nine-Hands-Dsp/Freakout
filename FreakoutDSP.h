@@ -1,6 +1,6 @@
 #pragma once
 // =====================================================================================================
-// FREAKOUT (Studio Wiga) - moteur de larsen « naturel » (d'apres le fonctionnement de la DigiTech FreqOut)
+// FREAKOUT (NINE HANDS | DSP) - moteur de larsen « naturel » (d'apres le fonctionnement de la DigiTech FreqOut)
 //
 // Principe (aucun schema publie : pedale entierement numerique, reproduite d'apres le manuel et les tests) :
 //   1. detection de la hauteur (YIN sur un signal decime a ~12 kHz, de 30 Hz (7 cordes / basse) a 1,6 kHz) ;

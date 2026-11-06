@@ -431,7 +431,7 @@ void FreakoutAudioProcessorEditor::resized()
 }
 
 //==============================================================================
-// Anti-gel v2 (Studio Wiga) :
+// Anti-gel v2 (NINE HANDS | DSP) :
 //  1. moteur de rendu logiciel force sur Windows, applique a chaque nouvelle fenetre hote et reverifie toutes les secondes ;
 //  2. aucun calcul lourd dans paint() : caches reconstruits par le timer (apres stabilisation de la taille / changement d'echelle) ;
 //  3. chien de garde : redessin demande non servi depuis 1,5 s -> moteur de rendu reapplique, fenetre redessinee ;
@@ -876,7 +876,7 @@ void FreakoutAudioProcessorEditor::showContextMenu (int learnIdx)
     midi.addItem (907, "Program Change 1-13  Factory presets", false);
     menu.addSubMenu ("MIDI map", midi);
     menu.addSeparator();
-    menu.addItem (999, "FreakOut feedback v" + String (JucePlugin_VersionString) + " - STUDIO WIGA", false);
+    menu.addItem (999, "FreakOut feedback v" + String (JucePlugin_VersionString) + " - NINE HANDS | DSP", false);
 
     menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
         [safe = Component::SafePointer<FreakoutAudioProcessorEditor> (this)] (int r)
