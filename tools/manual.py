@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -228,7 +228,7 @@ T["en"] = dict(
  pre=["13 factory presets are included (also in the DAW preset menu and on MIDI Program Change). Nine user slots can be saved from the preset menu."],
  fac_hdr=["#", "Preset", "Gain / Onset", "Type", "Switches", "Description"],
  tips_t="9. Playing tips",
- tips=["In Reaper put FreakOut first in the chain, before Two Notes Genome or any amp simulator, as the original manual recommends: it needs the clean guitar signal to read the harmonics. A compressor or buffer before it is fine.",
+ tips=["In Reaper put FreakOut first in the chain, before Ampire or any amp simulator, as the original manual recommends: it needs the clean guitar signal to read the harmonics. A compressor or buffer before it is fine.",
        "Mute the strings you are not playing: like real feedback, unwanted ringing strings make the feedback less predictable.",
        "Learn GAIN or ONSET on an expression pedal to ride the feedback with your foot, like moving closer to the amp.",
        "Low tunings: the pitch detection follows down to 30 Hz, so a 7-string tuned to G (49 Hz) or lower works. On very low notes, 2ND or 3RD usually gives the most audible feedback; SUB falls back to unison below about 50 Hz.",
@@ -296,7 +296,7 @@ T["fr"] = dict(
  pre=["13 presets d'usine sont fournis (aussi dans le menu de presets du DAW et en Program Change MIDI). Neuf emplacements utilisateur peuvent être enregistrés depuis le menu des presets."],
  fac_hdr=["N°", "Preset", "Gain / Onset", "Type", "Inverseurs", "Description"],
  tips_t="9. Conseils d'utilisation",
- tips=["Dans Reaper, placez FreakOut en premier dans la chaîne, avant Two Notes Genome ou tout simulateur d'ampli, comme le recommande le manuel d'origine : il a besoin du signal clair de la guitare pour lire les harmoniques. Un compresseur ou un buffer avant lui ne pose pas de problème.",
+ tips=["Dans Reaper, placez FreakOut en premier dans la chaîne, avant Ampire ou tout simulateur d'ampli, comme le recommande le manuel d'origine : il a besoin du signal clair de la guitare pour lire les harmoniques. Un compresseur ou un buffer avant lui ne pose pas de problème.",
        "Étouffez les cordes que vous ne jouez pas : comme pour un vrai larsen, des cordes qui sonnent à vide rendent le larsen moins prévisible.",
        "Apprenez GAIN ou ONSET sur une pédale d'expression pour doser le larsen au pied, comme en s'approchant de l'ampli.",
        "Accordages graves : la détection descend jusqu'à 30 Hz, une 7 cordes en G (49 Hz) ou plus bas fonctionne. Sur les notes très graves, 2ND ou 3RD donnent en général le larsen le plus audible ; SUB repasse à l'unisson sous environ 50 Hz.",
