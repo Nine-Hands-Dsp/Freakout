@@ -69,7 +69,7 @@ génère aussi `Layout.h` et `tools/layout.json`. Textes, traits, points, cadre 
 dessinés en vectoriel par l'éditeur, nets à toutes les tailles.
 Captures réelles : `tools/render` (compile la vraie fenêtre sous Linux).
 Polices : Poppins (interface) et Barlow Condensed (notice), licence SIL OFL, `assets/fonts`.
-Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.3.pdf` (français).
+Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.4.pdf` (français).
 
 - v1.0.2 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v1.1.0 : MIDI Learn au clic droit sur chaque commande (Clear MIDI, assignations sauvegardées avec le projet)
@@ -81,3 +81,4 @@ Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.3.
 - v1.3.2 : nouvelle texture d'aluminium brossé en une seule plaque haute résolution (sans raccord ni pixellisation), nouveau footswitch (photo de l'utilisateur)
 - v1.3.3 : contraste de la texture brossée réduit de 20 %
 - v1.3.3 : contraste de la texture brossée réduit de 20 %
+- v1.3.4 : les menus clic droit s'ouvrent toujours à l'endroit du clic

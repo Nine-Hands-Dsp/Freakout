@@ -962,7 +962,7 @@ void FreakoutAudioProcessorEditor::showContextMenu (int learnIdx)
     menu.addItem (999, "FreakOut feedback v" + String (JucePlugin_VersionString) + " - NINE HANDS | DSP", false);
 
     menu.setLookAndFeel (&lnf);
-    menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
+    menu.showMenuAsync (PopupMenu::Options().withMousePosition(),    // menu clic droit : toujours la ou l on clique
         [safe = Component::SafePointer<FreakoutAudioProcessorEditor> (this)] (int r)
         {
             if (safe == nullptr || r == 0) return;
