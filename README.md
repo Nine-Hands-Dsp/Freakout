@@ -3,6 +3,13 @@
 Plugin VST3 (Windows et macOS) de **larsen naturel** pour guitare et basse, au format pédale simple,
 d'après le fonctionnement de la DigiTech FreqOut (Natural Feedback Creator). Visuel original NINE HANDS | DSP.
 
+<p align="center">
+  <a href="https://github.com/Nine-Hands-Dsp/Freakout/releases/latest/download/FreakOut-VST3-Windows.zip"><img alt="Télécharger pour Windows" src="https://img.shields.io/badge/%E2%AC%87%20T%C3%A9l%C3%A9charger-Windows-0078D6?style=for-the-badge"></a>
+  <a href="https://github.com/Nine-Hands-Dsp/Freakout/releases/latest/download/FreakOut-VST3-macOS.zip"><img alt="Télécharger pour macOS" src="https://img.shields.io/badge/%E2%AC%87%20T%C3%A9l%C3%A9charger-macOS-111111?style=for-the-badge&logo=apple&logoColor=white"></a>
+  <br>
+  <a href="https://github.com/Nine-Hands-Dsp/Freakout/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/Nine-Hands-Dsp/Freakout?label=derni%C3%A8re%20version&color=919496"></a>
+</p>
+
 ## Commandes (comme la pédale d'origine)
 
 | Commande | Rôle |
