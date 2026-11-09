@@ -6,7 +6,7 @@ if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "" FORCE)
 endif()
 
-project(FreakOut VERSION 1.2.2)
+project(FreakOut VERSION 1.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,8 +28,8 @@ endif()
 
 # visuel integre au plugin (aucun fichier externe a l'execution)
 juce_add_binary_data(FreakOutAssets SOURCES
-  background.jpg toggle_strip.png glow_strip.png fs_down.png
-  assets/fonts/BarlowCondensed-SemiBold.ttf assets/fonts/BarlowCondensed-Bold.ttf)
+  background.png toggle_strip.png glow_strip.png led_on.png fs_down.png NineHandsLogo.svg
+  assets/fonts/Poppins-Regular.ttf assets/fonts/Poppins-Medium.ttf assets/fonts/Poppins-Bold.ttf assets/fonts/Poppins-Light.ttf)
 set_target_properties(FreakOutAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 juce_add_plugin(FreakOut
@@ -40,7 +40,7 @@ juce_add_plugin(FreakOut
   FORMATS VST3
   VST3_CATEGORIES Fx Generator
   PRODUCT_NAME "FreakOut"
-  VERSION 1.2.2
+  VERSION 1.3.0
   DESCRIPTION "Natural harmonic feedback generator (FreqOut style) - single pedal format"
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT TRUE

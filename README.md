@@ -53,7 +53,7 @@ clic droit > MIDI map > « Clear all MIDI assignments » efface toutes les assig
 
 ## Fenêtre
 
-Même taille par défaut qu'Echoflex (391 × 493), impossible de la réduire en dessous ; clic droit : **Plugin size**
+Pédale plein cadre (fond 1235 × 1800 px), hauteur par défaut 493 px (338 × 493), impossible de la réduire en dessous ; clic droit : **Plugin size**
 (60 / 75 / 100 %, la taille par défaut marquée « (default) » ; **Default size (new windows)** choisit la taille
 d'ouverture des nouvelles fenêtres, commune à toutes les instances, et redimensionne aussi la fenêtre courante), presets, sensibilité de déclenchement, mode du footswitch MIDI, table MIDI.
 
@@ -63,11 +63,17 @@ par le timer, chien de garde de redessin, aucun appel à l'hôte depuis le threa
 ## Construction
 
 JUCE 8.0.15 + CMake ; GitHub Actions (`windows-2022`, `macos-14`) produit les VST3 prêts à installer.
-Visuel : `python3 tools/controls_art.py` puis `python3 tools/make_background.py` (génère aussi `Layout.h`).
+Visuel : `python3 tools/make_art.py` (≈ 20 s) : boîtier et cadre calculés en 4K (4 px par unité) puis ramenés en 1235 × 1800,
+kit photo NINE HANDS | DSP (potards, LED, footswitch, jacks, inverseurs), transparence seulement autour des jacks ;
+génère aussi `Layout.h` et `tools/layout.json`. Textes, traits, points, cadre et logo (`NineHandsLogo.svg`) sont
+dessinés en vectoriel par l'éditeur, nets à toutes les tailles.
 Captures réelles : `tools/render` (compile la vraie fenêtre sous Linux).
-Polices : Bebas Neue et Barlow Condensed (licence SIL OFL, `assets/fonts`).
+Polices : Poppins (interface) et Barlow Condensed (notice), licence SIL OFL, `assets/fonts`.
+Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.0.pdf` (français).
 
 - v1.0.2 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v1.1.0 : MIDI Learn au clic droit sur chaque commande (Clear MIDI, assignations sauvegardées avec le projet)
 - v1.2.0 : clic droit > Plugin size > Default size (new windows) : taille par défaut des nouvelles fenêtres au choix, comme dans Octopus
 - v1.2.1 : plus aucun CC MIDI assigné par défaut (tout passe par le MIDI Learn)
+- v1.2.2 : boutons de téléchargement dans le README
+- v1.3.0 : pédale entièrement refaite au format 1235 × 1800 avec le kit photo (potards, LED, footswitch, jacks, inverseurs), sérigraphie et cadre vectoriels, menus clic droit au design d'Octopus, notice en français

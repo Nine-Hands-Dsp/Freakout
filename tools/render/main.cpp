@@ -31,6 +31,7 @@ int main (int argc, char** argv)
     proc.prepareToPlay (48000.0, 256);
     std::unique_ptr<AudioProcessorEditor> ed (proc.createEditor());
     auto* fed = static_cast<FreakoutAudioProcessorEditor*> (ed.get());
+    fed->forceRenderScale (2.0f);                     // captures a 2x : caches a la resolution de la capture
     std::printf ("taille par defaut : %d x %d\n", ed->getWidth(), ed->getHeight());
 
     auto pump = [] (int n) { for (int i = 0; i < n; ++i) MessageManager::getInstance()->runDispatchLoopUntil (35); };
@@ -61,25 +62,21 @@ int main (int argc, char** argv)
         std::printf ("%s (%d x %d) meter %.2f fb %.1f Hz\n", f.getFullPathName().toRawUTF8(), img.getWidth(), img.getHeight(), proc.meter.load(), proc.fbHz.load());
     };
     shot ("freakout_default",  0, true,  0.0f,   0.0f, FreakoutAudioProcessorEditor::defaultH);
-    shot ("freakout_bloom",    1, true,  164.8f, 0.30f, FreakoutAudioProcessorEditor::baseH);
-    shot ("freakout_full",     3, true,  110.0f, 1.6f, FreakoutAudioProcessorEditor::baseH);
-    shot ("freakout_status",   0, true,  0.0f,   0.0f, FreakoutAudioProcessorEditor::baseH, "gain");
-    shot ("freakout_bypass",   10, false, 0.0f,  0.0f, FreakoutAudioProcessorEditor::baseH);
+    shot ("freakout_bloom",    1, true,  164.8f, 0.30f, FreakoutAudioProcessorEditor::refH);
+    shot ("freakout_full",     3, true,  110.0f, 1.6f, FreakoutAudioProcessorEditor::refH);
+    shot ("freakout_status",   0, true,  0.0f,   0.0f, FreakoutAudioProcessorEditor::refH, "gain");
+    shot ("freakout_bypass",   10, false, 0.0f,  0.0f, FreakoutAudioProcessorEditor::refH);
     // appui maintenu sur le footswitch (MOMENTARY ON)
     {
         proc.applyFactoryPreset (2);
         pump (10);
-        auto* fsComp = ed->getChildComponent (4);
-        const auto pt = fsComp->getLocalBounds().getCentre().toFloat();
-        auto src = Desktop::getInstance().getMainMouseSource();
-        MouseEvent ev (src, pt, ModifierKeys (ModifierKeys::leftButtonModifier), 1.0f, 0, 0, 0, 0, fsComp, fsComp, Time::getCurrentTime(), pt, Time::getCurrentTime(), 1, false);
-        fsComp->mouseDown (ev);
+        fed->pressFootswitchForCapture (true);
         play (220.0f, 0.8f);
         pump (10);
         auto img = ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f);
         File f (out + "/freakout_pressed.png"); f.deleteFile();
         FileOutputStream os (f); PNGImageFormat().writeImageToStream (img, os);
-        fsComp->mouseUp (ev.withNewPosition (pt));
+        fed->pressFootswitchForCapture (false);
         std::printf ("%s\n", f.getFullPathName().toRawUTF8());
     }
 

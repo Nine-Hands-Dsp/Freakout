@@ -7,63 +7,31 @@ using namespace juce;
 
 namespace
 {
-    // positions dans le repere 760 x 958 (fond 1520 x 1916), generees par tools/make_background.py dans Layout.h
-    // a partir du visuel fourni : les potards sont vus en legere perspective (faces superieures = ellipses)
-    const float rangeHalf = layout::skirtRx + 3.0f;
-    const float typeHalf  = layout::typeRx + 4.0f;
-    const Rectangle<float> rowRect = layout::rowRect;           // ligne du haut de l'ecran
-    const Rectangle<float> presetRect = layout::barRect;        // barre de presets (son cadre fait partie du fond)
-    const Rectangle<float> statusRect = rowRect;
+    // repere 617,5 x 900 (fond 1235 x 1800 px / 2), positions generees par tools/make_art.py dans Layout.h
+    const Rectangle<float> statusRect = layout::statusRect;
+    const Rectangle<float> presetRect = layout::presetRect;
 
     const float rotStart = -150.0f, rotEnd = 150.0f;    // degres, 0 = midi (repere vers le haut)
     float knobAngle (float v) { return degreesToRadians (rotStart + (rotEnd - rotStart) * jlimit (0.0f, 10.0f, v) / 10.0f); }
 
-    const Colour inkWhite (0xffd6d6d4), lcd (0xffe9b48f);       // couleurs des textes de l'ecran du visuel
+    const Colour inkDark (0xff1b1b1e), inkLight (0xffdcdcd8);      // serigraphie : noire sur le metal, claire sur les panneaux
+    const Colour lcd (0xffe9b48f), presetInk (0xffd6d6d4);           // ecran : ambre, barre de presets
+    const Colour pointerCream (0xffe8e1d4);                          // repere creme des potards (comme la photo)
 
     const char* const valueIds[] = { "gain", "onset", "type", "momentary", "dry", "active", "sensitivity" };
     constexpr int numValueIds = 7;
 
-    // point de la face superieure d'un potard (ellipse de perspective) a l'angle a et a la fraction f du rayon
-    Point<float> onFace (Point<float> c, float rx, float ry, float a, float f)
+    // repere creme sur le dessus d'un potard (vue de dessus) : de f0 a f1 du rayon, bouts arrondis ;
+    // lumiere en haut a gauche : fine ombre vers le bas a droite, peinture un peu plus claire tournee vers la lumiere
+    void paintPointer (Graphics& g, Point<float> c, float R, float a, float f0, float f1, float w)
     {
-        return { c.x + f * rx * std::sin (a), c.y - f * ry * std::cos (a) };
-    }
-
-    // repere peint en blanc (comme sur le visuel) : la lumiere vient du haut, un peu a gauche ;
-    // la peinture est un poil plus claire tournee vers elle, fine ombre de relief vers le bas
-    void paintPointer (Graphics& g, Point<float> c, float rx, float ry, float a, float f0, float f1, float w, bool roundEnds)
-    {
-        const auto p0 = onFace (c, rx, ry, a, f0), p1 = onFace (c, rx, ry, a, f1);
-        Path line; line.startNewSubPath (p0); line.lineTo (p1);
-        Path s;
-        PathStrokeType (w, PathStrokeType::curved, roundEnds ? PathStrokeType::rounded : PathStrokeType::butt).createStrokedPath (s, line);
-        const float lightFacing = 0.5f + 0.5f * std::cos (a + MathConstants<float>::pi * 0.15f);
-        g.setColour (Colours::black.withAlpha (0.50f));
-        g.fillPath (s, AffineTransform::translation (0.25f, 0.55f));
-        ColourGradient paint (Colour::greyLevel (0.97f), p1.x, p1.y, Colour::greyLevel (0.80f + 0.10f * lightFacing), p0.x, p0.y, false);
-        g.setGradientFill (paint);
-        g.fillPath (s);
-        // petit reflet le long du bord tourne vers la lumiere
-        g.setColour (Colours::white.withAlpha (0.35f));
-        g.fillPath (s, AffineTransform::translation (-0.2f, -0.3f).scaled (1.0f, 1.0f));
-    }
-
-    // dessus visible de la jupe ONSET : ellipse de la jupe moins la silhouette du chapeau (dessus + flanc en perspective)
-    Path skirtVisible()
-    {
-        Path p;
-        p.addEllipse (layout::skirtC.x - layout::skirtRx, layout::skirtC.y - layout::skirtRy, layout::skirtRx * 2.0f, layout::skirtRy * 2.0f);
-        Path cap;
-        const float r = layout::capSideR + 0.6f;
-        const float cx = (layout::capC.x + layout::capBaseC.x) * 0.5f;
-        const float yTop = layout::capC.y, yBase = layout::capBaseC.y;
-        cap.addCentredArc (cx, yTop,  r, r * layout::capRy / layout::capRx, 0.0f, -MathConstants<float>::halfPi, MathConstants<float>::halfPi, true);
-        cap.lineTo (cx + r, yBase);
-        cap.addCentredArc (cx, yBase, r, r * layout::capRy / layout::capRx, 0.0f, MathConstants<float>::halfPi, MathConstants<float>::pi * 1.5f, false);
-        cap.closeSubPath();
-        p.addPath (cap);
-        p.setUsingNonZeroWinding (false);
-        return p;
+        const Point<float> dir (std::sin (a), -std::cos (a));
+        Path line; line.startNewSubPath (c + dir * (f0 * R)); line.lineTo (c + dir * (f1 * R));
+        g.setColour (Colours::black.withAlpha (0.55f));
+        g.strokePath (line, PathStrokeType (w * 1.12f, PathStrokeType::curved, PathStrokeType::rounded), AffineTransform::translation (R * 0.012f, R * 0.018f));
+        const float lightFacing = 0.5f + 0.5f * std::cos (a + MathConstants<float>::pi * 0.25f);
+        g.setColour (pointerCream.withMultipliedBrightness (0.93f + 0.07f * lightFacing));
+        g.strokePath (line, PathStrokeType (w, PathStrokeType::curved, PathStrokeType::rounded));
     }
 }
 
@@ -71,8 +39,8 @@ namespace
 // POTARD CONCENTRIQUE RANGE
 //==============================================================================
 ConcentricKnob::ConcentricKnob (RangedAudioParameter& g, RangedAudioParameter& o)
-    : gainAtt  (g, [this] (float v) { gainV = v;  repaint(); }),
-      onsetAtt (o, [this] (float v) { onsetV = v; repaint(); })
+    : gainAtt  (g, [this] (float v) { gainV = v;  if (onValue) onValue(); }),
+      onsetAtt (o, [this] (float v) { onsetV = v; if (onValue) onValue(); })
 {
     gainAtt.sendInitialUpdate();
     onsetAtt.sendInitialUpdate();
@@ -82,15 +50,14 @@ ConcentricKnob::ConcentricKnob (RangedAudioParameter& g, RangedAudioParameter& o
 bool ConcentricKnob::hitTest (int x, int y)
 {
     const auto c = getLocalBounds().toFloat().getCentre();
-    return c.getDistanceFrom ({ (float) x, (float) y }) <= layout::skirtRx * unitScale;
+    return c.getDistanceFrom ({ (float) x, (float) y }) <= (float) getWidth() * 0.5f;
 }
 
 int ConcentricKnob::zoneAt (Point<float> p) const
 {
     const auto c = getLocalBounds().toFloat().getCentre();
-    // chapeau GAIN : sa face superieure est decalee vers le haut (perspective)
-    const Point<float> capC ((layout::capC.x - layout::skirtC.x) * unitScale + c.x, (layout::capC.y + 4.0f - layout::skirtC.y) * unitScale + c.y);
-    return capC.getDistanceFrom (p) <= (layout::capRx + 3.0f) * unitScale ? 0 : 1;
+    const float unit = (float) getWidth() * 0.5f / layout::skirtR;
+    return c.getDistanceFrom (p) <= (layout::capR + 2.0f) * unit ? 0 : 1;      // chapeau GAIN au centre, jupe ONSET autour
 }
 
 void ConcentricKnob::setV (int which, float v)
@@ -143,7 +110,6 @@ void ConcentricKnob::mouseWheelMove (const MouseEvent& e, const MouseWheelDetail
     if (onTouched) onTouched (z);
 }
 
-void ConcentricKnob::paint (Graphics&) {}       // reperes dessines par l'editeur (perspective, decoupe par le chapeau)
 
 //==============================================================================
 // SELECTEUR TYPE
@@ -153,7 +119,6 @@ TypeKnob::TypeKnob (RangedAudioParameter& p)
                   {
                       pos = jlimit (0, 6, roundToInt (v));
                       targetAngle = degreesToRadians (-135.0f + 45.0f * (float) pos);
-                      repaint();
                   })
 {
     attachment.sendInitialUpdate();
@@ -195,13 +160,15 @@ void TypeKnob::mouseWheelMove (const MouseEvent&, const MouseWheelDetails& w)
 bool TypeKnob::tick()
 {
     // le selecteur tourne d'un cran a l'autre en ~70 ms (pas de saut)
-    if (std::abs (targetAngle - shownAngle) < 0.002f) { if (std::abs (shownAngle - targetAngle) > 0.0f) { shownAngle = targetAngle; repaint(); return true; } return false; }
+    if (std::abs (targetAngle - shownAngle) < 0.002f)
+    {
+        if (std::abs (shownAngle - targetAngle) > 0.0f) { shownAngle = targetAngle; return true; }
+        return false;
+    }
     shownAngle += (targetAngle - shownAngle) * 0.55f;
-    repaint();
     return true;
 }
 
-void TypeKnob::paint (Graphics&) {}
 
 //==============================================================================
 // INVERSEUR (haut = ON)
@@ -238,6 +205,13 @@ void LeverSwitch::paint (Graphics& g)
     g.drawImage (strip, 0, 0, getWidth(), getHeight(), 0, shownFrame * fh, fw, fh);
 }
 
+bool LeverSwitch::hitTest (int x, int y)
+{
+    // rondelle et levier (le sprite contient aussi l'ombre portee)
+    const auto b = getLocalBounds().toFloat();
+    return std::abs ((float) x - b.getCentreX()) < b.getWidth() * 0.26f && std::abs ((float) y - b.getCentreY()) < b.getHeight() * 0.38f;
+}
+
 void LeverSwitch::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { if (onRightClick) onRightClick(); return; }
@@ -265,17 +239,35 @@ FootSwitchArea::FootSwitchArea (RangedAudioParameter& p, std::atomic<float>* mom
 
 bool FootSwitchArea::hitTest (int x, int y)
 {
+    // zone d'appui circulaire : le bouton et l'ecrou (le sprite contient aussi l'ombre)
     const auto c = getLocalBounds().toFloat().getCentre();
-    return c.getDistanceFrom ({ (float) x, (float) y }) <= (float) getWidth() * 0.5f;
+    return c.getDistanceFrom ({ (float) x, (float) y }) <= (float) getWidth() * (layout::footR * 1.45f / layout::fsS);
 }
 
-void FootSwitchArea::paint (Graphics&) {}        // l'editeur dessine le bouton enfonce (sprite tire du visuel)
+void FootSwitchArea::paint (Graphics& g)
+{
+    if (! pressed) return;
+    const auto b = getLocalBounds().toFloat();
+    // bouton enfonce dans son ecrou (sprite au meme cadrage que le footswitch du fond)
+    if (down.isValid())
+    {
+        g.setImageResamplingQuality (Graphics::highResamplingQuality);
+        g.drawImage (down, b);
+    }
+    // et assombri tant qu'on appuie (disque noir a 25 %, comportement d'Echoflex)
+    const float r = b.getWidth() * (layout::footR / layout::fsS) * 0.95f;
+    const auto c = b.getCentre().translated (b.getWidth() * 0.002f, b.getWidth() * 0.004f);
+    ColourGradient shade (Colours::black.withAlpha (0.25f), c.x, c.y, Colours::black.withAlpha (0.0f), c.x + r, c.y, true);
+    shade.addColour (0.8, Colours::black.withAlpha (0.22f));
+    g.setGradientFill (shade);
+    g.fillEllipse (c.x - r, c.y - r, r * 2.0f, r * 2.0f);
+}
 
 void FootSwitchArea::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { if (onRightClick) onRightClick(); return; }
     pressed = true;
-    if (onPressChange) onPressChange();
+    repaint();
     const bool momentary = mom != nullptr && mom->load() > 0.5f;
     attachment.setValueAsCompleteGesture (momentary ? 1.0f : (value ? 0.0f : 1.0f));   // bascule des l'appui
     if (onUserChange) onUserChange();
@@ -291,7 +283,7 @@ void FootSwitchArea::mouseUp (const MouseEvent& e)
         if (onUserChange) onUserChange();
     }
     pressed = false;
-    if (onPressChange) onPressChange();
+    repaint();
 }
 
 //==============================================================================
@@ -305,20 +297,28 @@ FreakoutAudioProcessorEditor::FreakoutAudioProcessorEditor (FreakoutAudioProcess
       drySw (*p.apvts.getParameter ("dry")),
       foot (*p.apvts.getParameter ("active"), p.apvts.getRawParameterValue ("momentary"))
 {
-    setLookAndFeel (&lnf);
-    background = ImageCache::getFromMemory (BinaryData::background_jpg, BinaryData::background_jpgSize);
+    setLookAndFeel (&lnf);                 // menus au design d'Octopus (+ poignee de redimensionnement)
+    background = ImageCache::getFromMemory (BinaryData::background_png, BinaryData::background_pngSize);
     glowStrip  = ImageCache::getFromMemory (BinaryData::glow_strip_png, BinaryData::glow_strip_pngSize);
+    ledOn      = ImageCache::getFromMemory (BinaryData::led_on_png, BinaryData::led_on_pngSize);
     const auto strip = ImageCache::getFromMemory (BinaryData::toggle_strip_png, BinaryData::toggle_strip_pngSize);
-    fsDown = ImageCache::getFromMemory (BinaryData::fs_down_png, BinaryData::fs_down_pngSize);
-    // police du visuel (Barlow Condensed) pour l'affichage
-    labelFace = Typeface::createSystemTypefaceFor (BinaryData::BarlowCondensedSemiBold_ttf, BinaryData::BarlowCondensedSemiBold_ttfSize);
-    boldFace  = Typeface::createSystemTypefaceFor (BinaryData::BarlowCondensedBold_ttf, BinaryData::BarlowCondensedBold_ttfSize);
+    foot.down  = ImageCache::getFromMemory (BinaryData::fs_down_png, BinaryData::fs_down_pngSize);
+    // Poppins (serigraphie, ecran, menus) et logo NINE HANDS | DSP vectoriel
+    regFace   = Typeface::createSystemTypefaceFor (BinaryData::PoppinsRegular_ttf, BinaryData::PoppinsRegular_ttfSize);
+    labelFace = Typeface::createSystemTypefaceFor (BinaryData::PoppinsMedium_ttf, BinaryData::PoppinsMedium_ttfSize);
+    boldFace  = Typeface::createSystemTypefaceFor (BinaryData::PoppinsBold_ttf, BinaryData::PoppinsBold_ttfSize);
+    lightFace = Typeface::createSystemTypefaceFor (BinaryData::PoppinsLight_ttf, BinaryData::PoppinsLight_ttfSize);
+    lnf.reg = regFace; lnf.med = labelFace; lnf.bold = boldFace;
+    if (auto xml = XmlDocument::parse (String::fromUTF8 (BinaryData::NineHandsLogo_svg, BinaryData::NineHandsLogo_svgSize)))
+        logo = Drawable::createFromSVG (*xml);
+    buildPrint();
 
     auto edited = [this] { proc.currentPreset = -1; };
     // index des commandes = learnDef du processeur (0 Gain, 1 Onset, 2 Type, 3 Momentary, 4 Dry, 5 footswitch)
     range.onRightClick = [this] { showContextMenu (range.rightZone == 1 ? 1 : 0); };
     range.onUserChange = edited;
     range.onTouched = [this] (int which) { lastChanged = which; showStatus(); };
+    range.onValue = [this] { askRepaint (range.getBounds()); };
     typeKnob.onRightClick = [this] { showContextMenu (2); };
     typeKnob.onUserChange = edited;
     for (auto* l : { &momentarySw, &drySw })
@@ -329,8 +329,6 @@ FreakoutAudioProcessorEditor::FreakoutAudioProcessorEditor (FreakoutAudioProcess
     momentarySw.onRightClick = [this] { showContextMenu (3); };
     drySw.onRightClick       = [this] { showContextMenu (4); };
     foot.onRightClick = [this] { showContextMenu (5); };
-    foot.onPressChange = [this] { askRepaint (scaled (layout::footRect)); };
-    range.onRepaintNeeded = [this] { askRepaint (scaled (Rectangle<float> (layout::skirtC.x - rangeHalf, layout::capC.y - rangeHalf - 6.0f, rangeHalf * 2.0f, rangeHalf * 2.0f + 16.0f))); };
     addAndMakeVisible (range);
     addAndMakeVisible (typeKnob);
     addAndMakeVisible (momentarySw);
@@ -343,9 +341,9 @@ FreakoutAudioProcessorEditor::FreakoutAudioProcessorEditor (FreakoutAudioProcess
     ledLevel = proc.raw ("active") > 0.5f ? 1.0f : 0.0f;
 
     // taille par defaut = taille minimale (impossible de reduire en dessous), proportions bloquees
-    const int defaultW = roundToInt ((float) defaultH * (float) baseW / (float) baseH);
+    const int defaultW = roundToInt ((float) defaultH * baseW / baseH);
     setResizable (true, true);
-    setResizeLimits (defaultW, defaultH, baseW * 3 / 2, baseH * 3 / 2);
+    setResizeLimits (defaultW, defaultH, roundToInt ((float) maxH * baseW / baseH), maxH);
     if (auto* cons = getConstrainer())
         cons->setFixedAspectRatio ((double) baseW / (double) baseH);
     setOpaque (true);
@@ -358,27 +356,29 @@ FreakoutAudioProcessorEditor::FreakoutAudioProcessorEditor (FreakoutAudioProcess
 
 FreakoutAudioProcessorEditor::~FreakoutAudioProcessorEditor() { stopTimer(); setLookAndFeel (nullptr); }
 
+
 //==============================================================================
 int FreakoutAudioProcessorEditor::sizeHeight (int idx)
 {
-    const int h[numSizes] = { (int) defaultH, roundToInt (baseH * 0.75f), (int) baseH };
+    const int h[numSizes] = { (int) defaultH, roundToInt (refH * 0.75f), (int) refH };
     return h[jlimit (0, numSizes - 1, idx)];
 }
 
 void FreakoutAudioProcessorEditor::setScaledHeight (int h)
 {
-    h = jmax ((int) defaultH, h);
-    setSize (roundToInt ((float) h * (float) baseW / (float) baseH), h);
+    h = jlimit ((int) defaultH, (int) maxH, h);
+    setSize (roundToInt ((float) h * baseW / baseH), h);
 }
 
 Rectangle<int> FreakoutAudioProcessorEditor::scaled (Rectangle<float> r) const
 {
-    const float s = (float) getHeight() / (float) baseH;
+    const float s = (float) getHeight() / baseH;
     return r.transformedBy (AffineTransform::scale (s)).getSmallestIntegerContainer();
 }
 
 float FreakoutAudioProcessorEditor::physicalScale() const
 {
+    if (forcedScale > 0.0f) return forcedScale;
     return jlimit (1.0f, 4.0f, (float) Component::getApproximateScaleFactorForComponent (this));
 }
 
@@ -395,20 +395,21 @@ void FreakoutAudioProcessorEditor::rebuildCaches (float sc)
     if (w == cacheW && h == cacheH && std::abs (sc - cacheScale) < 0.01f && bgScaled.isValid()) return;
     cacheW = w; cacheH = h; cacheScale = sc;
 
+    // fond a la resolution physique de l'ecran (net sur Retina / 4K) ; jamais agrandi au-dela de l'image d'origine
     const int pw = roundToInt ((float) w * sc), ph = roundToInt ((float) h * sc);
     bgScaled = (pw >= background.getWidth()) ? background : background.rescaled (pw, ph, Graphics::highResamplingQuality);
 
-    const float s = (float) h / (float) baseH;
+    const float s = (float) h / baseH;
     const auto gr = layout::glowRect;
     const int lw = glowStrip.getWidth(), lh = glowStrip.getHeight() / 5;
     const int tw = roundToInt (gr.getWidth() * s * sc), th = roundToInt (gr.getHeight() * s * sc);
-    const int fw = roundToInt (layout::footRect.getWidth() * s * sc), fh = roundToInt (layout::footRect.getHeight() * s * sc);
-    fsDownS = (fw >= fsDown.getWidth()) ? fsDown : fsDown.rescaled (fw, fh, Graphics::highResamplingQuality);
     for (int k = 0; k < 5; ++k)
     {
         auto layer = glowStrip.getClippedImage ({ 0, k * lh, lw, lh });
         glowScaled[k] = (tw >= lw) ? layer.createCopy() : layer.rescaled (tw, th, Graphics::highResamplingQuality);
     }
+    const int lp = roundToInt (layout::ledS * s * sc);
+    ledOnS = (lp >= ledOn.getWidth()) ? ledOn : ledOn.rescaled (lp, lp, Graphics::highResamplingQuality);
     repaint();
 }
 
@@ -416,17 +417,11 @@ void FreakoutAudioProcessorEditor::resized()
 {
     // anti-gel : jamais de setSize ici ; les limites du constrainer suffisent
     auto sq = [] (Point<float> c, float half) { return Rectangle<float> (c.x - half, c.y - half, half * 2.0f, half * 2.0f); };
-    range.setBounds (scaled (sq (layout::skirtC, rangeHalf)));
-    range.unitScale = (float) range.getWidth() / (rangeHalf * 2.0f);
-    typeKnob.setBounds (scaled (sq (layout::typeC, typeHalf)));
-    typeKnob.unitScale = (float) typeKnob.getWidth() / (typeHalf * 2.0f);
-    auto tog = [] (Point<float> c)
-    {
-        return Rectangle<float> (c.x - layout::toggleHalfW, c.y - layout::toggleAbove, layout::toggleHalfW * 2.0f, layout::toggleAbove + layout::toggleBelow);
-    };
-    momentarySw.setBounds (scaled (tog (layout::momentaryPos)));
-    drySw.setBounds (scaled (tog (layout::dryPos)));
-    foot.setBounds (scaled (sq (layout::footPos, layout::footR)));
+    range.setBounds (scaled (sq (layout::rangePos, layout::skirtR)));
+    typeKnob.setBounds (scaled (sq (layout::typePos, layout::typeR)));
+    momentarySw.setBounds (scaled (sq (layout::momentaryPos, layout::togS * 0.5f)));
+    drySw.setBounds (scaled (sq (layout::dryPos, layout::togS * 0.5f)));
+    foot.setBounds (scaled (sq (layout::fsPos, layout::fsS * 0.5f)));
     resizeSettle = 4;
 }
 
@@ -533,7 +528,7 @@ void FreakoutAudioProcessorEditor::timerCallback()
 
     momentarySw.tick (now);
     drySw.tick (now);
-    if (typeKnob.tick()) askRepaint (scaled (Rectangle<float> (layout::typeC.x - typeHalf, layout::typeC.y - typeHalf, typeHalf * 2.0f, typeHalf * 2.0f)));
+    if (typeKnob.tick()) askRepaint (typeKnob.getBounds());
 
     // ligne d'etat : apparait quand un reglage bouge, reste 2,5 s puis s'efface
     int changed = -1, numChanged = 0;
@@ -611,13 +606,97 @@ void FreakoutAudioProcessorEditor::timerCallback()
 }
 
 //==============================================================================
+// Serigraphie vectorielle : construite une fois en chemins (unites du plugin), remplie a l'echelle de la fenetre :
+// textes Poppins, graduations, filets, fleches, pictogrammes, cadre grave, onde du titre, couronne du footswitch.
+//==============================================================================
+void FreakoutAudioProcessorEditor::buildPrint()
+{
+    printDark.clear(); printLight.clear(); framePath.clear(); wavePath.clear();
+    for (const auto& t : layout::texts)
+    {
+        const Typeface::Ptr face = t.font == 1 ? boldFace : (t.font == 2 ? lightFace : (t.font == 3 ? regFace : labelFace));
+        const Font font (FontOptions (face).withPointHeight (t.em));
+        const String str (t.s);
+        float total = 0.0f;
+        for (int i = 0; i < str.length(); ++i)
+            total += GlyphArrangement::getStringWidth (font, String::charToString (str[i])) + (i > 0 ? t.track : 0.0f);
+        const float base = (font.getAscent() - font.getDescent()) * 0.5f;     // centre vertical entre ascendante et descendante
+        GlyphArrangement ga;
+        float x = -total * 0.5f;
+        for (int i = 0; i < str.length(); ++i)
+        {
+            const String ch = String::charToString (str[i]);
+            ga.addLineOfText (font, ch, x, base);
+            x += GlyphArrangement::getStringWidth (font, ch) + t.track;
+        }
+        Path p; ga.createPath (p);
+        p.applyTransform (AffineTransform::rotation (-t.rot * MathConstants<float>::pi / 180.0f).translated (t.x, t.y));
+        (t.ink == 1 ? printLight : printDark).addPath (p);
+    }
+    for (const auto& l : layout::lines)
+    {
+        Path seg; seg.startNewSubPath (l.x0, l.y0); seg.lineTo (l.x1, l.y1);
+        Path st; PathStrokeType (l.w, PathStrokeType::mitered, PathStrokeType::butt).createStrokedPath (st, seg);
+        (l.ink == 1 ? printLight : printDark).addPath (st);
+    }
+    for (const auto& t : layout::tris)
+    {
+        Path p; p.addTriangle (t.x0, t.y0, t.x1, t.y1, t.x2, t.y2);
+        (t.ink == 1 ? printLight : printDark).addPath (p);
+    }
+    for (const auto& ic : layout::icons)
+    {
+        Path ring; ring.addEllipse (ic.x - 5.5f, ic.y - 5.5f, 11.0f, 11.0f);
+        Path st; PathStrokeType (1.4f).createStrokedPath (st, ring);
+        printDark.addPath (st);
+        if (ic.inner) printDark.addEllipse (ic.x - 2.4f, ic.y - 2.4f, 4.8f, 4.8f);
+    }
+    // couronne du footswitch
+    {
+        Path ring; ring.addEllipse (layout::fsPos.x - layout::fsRing, layout::fsPos.y - layout::fsRing, layout::fsRing * 2.0f, layout::fsRing * 2.0f);
+        Path st; PathStrokeType (1.8f).createStrokedPath (st, ring);
+        printDark.addPath (st);
+    }
+    // onde de larsen du titre (traits arrondis)
+    for (const auto& w : layout::wave)
+    {
+        Path seg; seg.startNewSubPath (w.p[0], w.p[1]);
+        for (int i = 1; i < w.n; ++i) seg.lineTo (w.p[2 * i], w.p[2 * i + 1]);
+        Path st; PathStrokeType (layout::waveW, PathStrokeType::curved, PathStrokeType::rounded).createStrokedPath (st, seg);
+        wavePath.addPath (st);
+    }
+    // cadre grave du boitier
+    framePath.addRoundedRectangle (layout::frame[0], layout::frame[1], layout::frame[2], layout::frame[3], layout::frame[4]);
+}
+
+void FreakoutAudioProcessorEditor::drawPrint (Graphics& g)
+{
+    // cadre grave : rainure sombre, arete claire du cote eclaire (bas / droite de la rainure), lumiere en haut a gauche
+    g.setColour (Colours::white.withAlpha (0.55f));
+    g.strokePath (framePath, PathStrokeType (1.1f), AffineTransform::translation (0.75f, 0.95f));
+    g.setColour (Colour (0xff2a2b2f).withAlpha (0.92f));
+    g.strokePath (framePath, PathStrokeType (1.5f));
+    g.setColour (inkDark);
+    g.fillPath (printDark);
+    g.fillPath (wavePath);
+    g.setColour (inkLight);
+    g.fillPath (printLight);
+    if (logo != nullptr)
+    {
+        const auto vb = logo->getDrawableBounds();
+        const float w = layout::logoW, h = w * vb.getHeight() / jmax (1.0f, vb.getWidth());
+        logo->drawWithin (g, { layout::logoPos.x - w * 0.5f, layout::logoPos.y - h * 0.5f, w, h }, RectanglePlacement::centred, 0.92f);
+    }
+}
+
 void FreakoutAudioProcessorEditor::drawLeds (Graphics& g)
 {
+    if (ledLevel <= 0.003f) return;
     // la facade recoit la lumiere des LED : calques precalcules (fond x eclairement x couleur), 5 etats cumulatifs
     const float s4 = jlimit (0.0f, 4.0f, meterShown * 4.0f);
     const int k = jmin (3, (int) s4);
     const float frac = s4 - (float) k;
-    if (ledLevel > 0.003f && glowScaled[0].isValid())
+    if (glowScaled[0].isValid())
     {
         g.setOpacity (ledLevel);
         g.drawImage (glowScaled[k], layout::glowRect);
@@ -626,98 +705,99 @@ void FreakoutAudioProcessorEditor::drawLeds (Graphics& g)
             g.setOpacity (ledLevel * (s4 >= 4.0f ? 1.0f : frac));
             g.drawImage (glowScaled[s4 >= 4.0f ? 4 : k + 1], layout::glowRect);
         }
-        g.setOpacity (1.0f);
     }
-
+    // lentilles allumees (photo de LED), chacune a son intensite
+    const Image& lo = ledOnS.isValid() ? ledOnS : ledOn;
+    const float hs = layout::ledS * 0.5f;
+    for (int i = 0; i < 9; ++i)
+    {
+        if (ledB[i] <= 0.003f || ! lo.isValid()) continue;
+        const auto c = layout::ledPos[i];
+        g.setOpacity (ledB[i]);
+        g.drawImage (lo, { c.x - hs, c.y - hs, hs * 2.0f, hs * 2.0f });
+    }
+    g.setOpacity (1.0f);
 }
 
 void FreakoutAudioProcessorEditor::drawDisplay (Graphics& g)
 {
-    // ligne du haut : reglage qui vient de bouger (fondu), sinon ce qui larsene en ce moment ; couleur ambre du visuel
+    // ligne du haut : reglage qui vient de bouger (fondu), sinon ce qui larsene en ce moment ; ambre sur verre fume
     const float a = statusAlpha;
     const auto sr = statusRect.toNearestInt();
     auto glowText = [&] (const String& t, Font f, float alpha)
     {
         g.setFont (f);
-        g.setColour (lcd.withAlpha (0.16f * alpha));                    // leger halo de l'afficheur
-        for (auto d : { Point<int> (-1, 0), Point<int> (1, 0), Point<int> (0, -1), Point<int> (0, 1) })
-            g.drawFittedText (t, sr.translated (d.x, d.y), Justification::centred, 1, 0.8f);
+        g.setColour (lcd.withAlpha (0.14f * alpha));                    // leger halo de l'afficheur
+        for (auto d : { Point<float> (-0.8f, 0.0f), Point<float> (0.8f, 0.0f), Point<float> (0.0f, -0.8f), Point<float> (0.0f, 0.8f) })
+            g.drawFittedText (t, sr.toFloat().translated (d.x, d.y).toNearestInt(), Justification::centred, 1, 0.8f);
         g.setColour (lcd.withAlpha (alpha));
         g.drawFittedText (t, sr, Justification::centred, 1, 0.8f);
     };
-    if (a < 0.999f)
-        glowText (lastInfo, Font (FontOptions (boldFace).withHeight (28.0f)).withExtraKerningFactor (0.05f), 0.95f * (1.0f - a));
-    if (a > 0.0f)
-        glowText (lastLine1, Font (FontOptions (boldFace).withHeight (28.0f)).withExtraKerningFactor (0.05f), a);
+    const Font big (FontOptions (labelFace).withHeight (25.0f));
+    if (a < 0.999f) glowText (lastInfo, big.withExtraKerningFactor (0.04f), 0.95f * (1.0f - a));
+    if (a > 0.0f)   glowText (lastLine1, (lastLine1.length() > 24 ? big.withHeight (18.0f) : big).withExtraKerningFactor (0.04f), a);
 
-    // barre de presets (son cadre fait partie du fond) : fleches et nom
+    // barre de presets : cadre fin, fleches et nom
     const auto r = presetRect;
+    g.setColour (presetInk.withAlpha (hoverZone != 0 ? 0.45f : 0.20f));
+    g.drawRoundedRectangle (r.reduced (0.6f), r.getHeight() * 0.5f, 1.1f);
     if (hoverZone != 0)
     {
-        g.setColour (Colours::white.withAlpha (0.05f));
-        g.fillRoundedRectangle (r.reduced (1.5f), 4.0f);
+        g.setColour (Colours::white.withAlpha (0.04f));
+        g.fillRoundedRectangle (r.reduced (1.2f), r.getHeight() * 0.5f);
     }
-    const float aw = 30.0f;
+    const float aw = 32.0f;
     auto arrow = [&] (Rectangle<float> ar, bool left, bool hot)
     {
         Path p;
         const auto c = ar.getCentre();
-        const float s = 4.6f;
-        if (left) p.addTriangle (c.x + s * 0.6f, c.y - s, c.x + s * 0.6f, c.y + s, c.x - s * 0.8f, c.y);
-        else      p.addTriangle (c.x - s * 0.6f, c.y - s, c.x - s * 0.6f, c.y + s, c.x + s * 0.8f, c.y);
-        g.setColour (inkWhite.withAlpha (hot ? 1.0f : 0.72f));
+        const float sz = 4.8f;
+        if (left) p.addTriangle (c.x + sz * 0.6f, c.y - sz, c.x + sz * 0.6f, c.y + sz, c.x - sz * 0.8f, c.y);
+        else      p.addTriangle (c.x - sz * 0.6f, c.y - sz, c.x - sz * 0.6f, c.y + sz, c.x + sz * 0.8f, c.y);
+        g.setColour (presetInk.withAlpha (hot ? 1.0f : 0.7f));
         g.fillPath (p);
     };
     arrow (r.withWidth (aw), true, hoverZone == 1);
     arrow (r.withTrimmedLeft (r.getWidth() - aw), false, hoverZone == 3);
-    g.setFont (Font (FontOptions (labelFace).withHeight (20.0f)).withExtraKerningFactor (0.03f));
-    g.setColour ((midiFlash > 0 ? Colour (0xffffb08a) : inkWhite).withAlpha (hoverZone == 2 ? 1.0f : 0.9f));
+    g.setFont (Font (FontOptions (labelFace).withHeight (17.0f)).withExtraKerningFactor (0.02f));
+    g.setColour ((midiFlash > 0 ? Colour (0xffffb08a) : presetInk).withAlpha (hoverZone == 2 ? 1.0f : 0.9f));
     g.drawFittedText (lastPreset, r.reduced (aw, 0.0f).toNearestInt(), Justification::centred, 1, 0.75f);
 }
 
 void FreakoutAudioProcessorEditor::drawKnobs (Graphics& g)
 {
-    // ONSET : repere sur le dessus de la jupe, cache par le chapeau quand il passe derriere (perspective du visuel)
-    {
-        Graphics::ScopedSaveState ss (g);
-        g.reduceClipRegion (skirtVisible());
-        paintPointer (g, layout::skirtC, layout::skirtRx, layout::skirtRy, knobAngle (range.valueOf (1)), 0.71f, 0.975f, 3.3f, false);
-    }
-    // GAIN : repere sur la face superieure du chapeau
-    paintPointer (g, layout::capC, layout::capRx, layout::capRy, knobAngle (range.valueOf (0)), 0.20f, 0.92f, 3.6f, false);
-    // TYPE : repere a bouts arrondis (crans de 45 degres, rotation animee)
-    paintPointer (g, layout::typeC, layout::typeRx, layout::typeRy, typeKnob.getShownAngle(), 0.19f, 0.91f, 4.1f, true);
-}
-
-void FreakoutAudioProcessorEditor::drawFootswitch (Graphics& g)
-{
-    if (! foot.isPressed() || ! fsDownS.isValid()) return;
-    // bouton enfonce dans son ecrou (sprite tire du visuel) + disque assombri (comportement Echoflex)
-    g.drawImage (fsDownS, layout::footRect);
-    // le dessus du bouton est descendu de ~2,5 unites dans le sprite : le disque le suit, bord adouci
-    const auto c = layout::footPos.translated (0.0f, 3.0f * layout::unitPerPhotoPx);
-    const float r = layout::footR * 0.54f;
-    ColourGradient shade (Colours::black.withAlpha (0.25f), c.x, c.y, Colours::black.withAlpha (0.0f), c.x + r, c.y, true);
-    shade.addColour (0.75, Colours::black.withAlpha (0.22f));
-    g.setGradientFill (shade);
-    g.fillEllipse (c.x - r, c.y - r, r * 2.0f, r * 2.0f);
+    // reperes creme (comme sur la photo du potard) : seuls les reperes tournent, reflets et moletage restent fixes
+    paintPointer (g, layout::rangePos, layout::skirtR, knobAngle (range.valueOf (1)), 0.70f, 0.93f, 4.4f);   // ONSET (jupe)
+    paintPointer (g, layout::rangePos, layout::capR, knobAngle (range.valueOf (0)), 0.28f, 0.90f, 2.9f);     // GAIN (chapeau)
+    paintPointer (g, layout::typePos, layout::typeR, typeKnob.getShownAngle(), 0.28f, 0.90f, 3.2f);         // TYPE
 }
 
 void FreakoutAudioProcessorEditor::paint (Graphics& g)
 {
     lastPaintMs = Time::getMillisecondCounterHiRes();
     repaintAskedMs = 0.0;
-    g.fillAll (Colours::black);
+    g.fillAll (Colour (0xff111112));          // autour des jacks : le fond de l'image est transparent
+    // anti-gel : aucun rescale ici, on dessine le cache existant (ou l'original en attendant le timer)
     const Image& bg = bgScaled.isValid() ? bgScaled : background;
     g.setImageResamplingQuality (&bg == &background ? Graphics::highResamplingQuality : Graphics::lowResamplingQuality);
     if (bg.isValid()) g.drawImage (bg, getLocalBounds().toFloat());
 
-    const float s = (float) getHeight() / (float) baseH;
+    const float s = (float) getHeight() / baseH;
     g.addTransform (AffineTransform::scale (s));
+    g.setImageResamplingQuality (Graphics::mediumResamplingQuality);
     drawLeds (g);
+    drawPrint (g);
     drawKnobs (g);
-    drawFootswitch (g);
     drawDisplay (g);
+}
+
+void FreakoutAudioProcessorEditor::pressFootswitchForCapture (bool down)
+{
+    const Point<float> c = foot.getLocalBounds().getCentre().toFloat();
+    auto src = Desktop::getInstance().getMainMouseSource();
+    const MouseEvent ev (src, c, ModifierKeys (ModifierKeys::leftButtonModifier), 1.0f, 0, 0, 0, 0, &foot, &foot,
+                         Time::getCurrentTime(), c, Time::getCurrentTime(), 1, false);
+    if (down) foot.mouseDown (ev); else foot.mouseUp (ev);
 }
 
 //==============================================================================
@@ -726,14 +806,14 @@ void FreakoutAudioProcessorEditor::paint (Graphics& g)
 static int presetZoneAt (Point<float> p)
 {
     if (! presetRect.contains (p)) return 0;
-    if (p.x < presetRect.getX() + 30.0f) return 1;
-    if (p.x > presetRect.getRight() - 30.0f) return 3;
+    if (p.x < presetRect.getX() + 32.0f) return 1;
+    if (p.x > presetRect.getRight() - 32.0f) return 3;
     return 2;
 }
 
 void FreakoutAudioProcessorEditor::mouseMove (const MouseEvent& e)
 {
-    const float s = (float) getHeight() / (float) baseH;
+    const float s = (float) getHeight() / baseH;
     hoverZone = presetZoneAt (e.position / s);
     setMouseCursor (hoverZone != 0 ? MouseCursor::PointingHandCursor : MouseCursor::NormalCursor);
 }
@@ -743,7 +823,7 @@ void FreakoutAudioProcessorEditor::mouseExit (const MouseEvent&) { hoverZone = 0
 void FreakoutAudioProcessorEditor::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { showContextMenu(); return; }
-    const float s = (float) getHeight() / (float) baseH;
+    const float s = (float) getHeight() / baseH;
     switch (presetZoneAt (e.position / s))
     {
         case 1: stepPreset (-1); break;
@@ -777,6 +857,7 @@ void FreakoutAudioProcessorEditor::showPresetMenu()
     }
     m.addSubMenu ("Load user preset", load);
     m.addSubMenu ("Save user preset", save);
+    m.setLookAndFeel (&lnf);
     m.showMenuAsync (PopupMenu::Options().withTargetScreenArea (localAreaToGlobal (scaled (presetRect))),
         [safe = Component::SafePointer<FreakoutAudioProcessorEditor> (this)] (int r)
         {
@@ -878,6 +959,7 @@ void FreakoutAudioProcessorEditor::showContextMenu (int learnIdx)
     menu.addSeparator();
     menu.addItem (999, "FreakOut feedback v" + String (JucePlugin_VersionString) + " - NINE HANDS | DSP", false);
 
+    menu.setLookAndFeel (&lnf);
     menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
         [safe = Component::SafePointer<FreakoutAudioProcessorEditor> (this)] (int r)
         {

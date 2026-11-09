@@ -1,4 +1,4 @@
-# FREAKOUT (NINE HANDS | DSP) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
+# FREAKOUT (NINE HANDS | DSP) - notice PDF en francais, illustree avec le rendu reel du plugin (v1.3 : fond 1235 x 1800, repere 617,5 x 900).
 # Usage : python3 tools/manual.py <dossier des captures (tools/render)> <fichier PDF de sortie>
 #   ou   : python3 tools/manual.py tools/manual_assets <fichier PDF> (images deja composees, reprises de la notice v1.1.0 :
 #          freakout_annotated / knobs / ctl / leds / disp / cover_cutout.png)
@@ -18,12 +18,12 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "1.2.2"
+VERSION = "1.3.0"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
 for n, f in (("Pop", "Poppins-Regular"), ("PopL", "Poppins-Light"), ("PopM", "Poppins-Medium"), ("PopB", "Poppins-Bold"),
-             ("Bebas", "BebasNeue-Regular")):
+             ("Title", "BarlowCondensed-ExtraBold")):
     pdfmetrics.registerFont(TTFont(n, os.path.join(FONTS, f + ".ttf")))
 
 ACC = colors.HexColor("#D6301C"); ACC_L = colors.HexColor("#FF6A4D")       # rouge des LED du visuel
@@ -37,19 +37,18 @@ if PREBUILT:   # images deja composees (tools/manual_assets, reprises de la noti
         for n in ("annotated", "knobs", "ctl", "leds", "disp", "cover_cutout"))
 else:
     def shot(name): return Image.open(os.path.join(SHOTS, name)).convert("RGB")
-    K = shot("freakout_status.png").height / 958.0          # px par unite 760 x 958
+    src = shot("freakout_status.png")
+    K = src.height / 900.0                                   # repere du plugin v1.3 : 617,5 x 900 unites (fond 1235 x 1800 / 2)
 
     # ---------- capture annotee ----------
-    src = shot("freakout_status.png")
     ann = src.copy(); dr = ImageDraw.Draw(ann)
     fnt = ImageFont.truetype(os.path.join(FONTS, "Poppins-Bold.ttf"), 30)
-    led_mid = LAY["leds"][4]
-    marks = [  # numero, x, y (unites), decalage de la pastille
-        (1, led_mid[0] - 50, led_mid[1]), (2, LAY["toggles"]["momentary"][0] + 52, LAY["toggles"]["momentary"][1] - 10),
-        (3, LAY["toggles"]["dry"][0] + 52, LAY["toggles"]["dry"][1] - 10),
-        (4, LAY["cap"][0][0] - 5, LAY["cap"][0][1] - 5), (5, LAY["skirt"][0][0] + 66, LAY["skirt"][0][1] - 50),
-        (6, LAY["type"][0][0] - 70, LAY["type"][0][1] - 50), (7, 380, 470), (8, 380, 548),
-        (9, LAY["fs"][0] + 75, LAY["fs"][1] - 50), (10, 132, 470), (11, 628, 470)]
+    led_mid = LAY["leds"][4]; rg = LAY["range"]; ty = LAY["type"]; tg = LAY["toggles"]; dsp = LAY["display"]
+    marks = [  # numero, x, y (unites du plugin)
+        (1, led_mid[0] - 50, led_mid[1]), (2, tg["momentary"][0] + 46, tg["momentary"][1] - 10), (3, tg["dry"][0] + 46, tg["dry"][1] - 10),
+        (4, rg[0] + 20, rg[1] + 4), (5, rg[0] + 70, rg[1] - 58), (6, ty[0] - 70, ty[1] - 46),
+        (7, dsp[0] + 18, dsp[1] + 26), (8, dsp[0] + 18, dsp[1] + 64), (9, LAY["fs"][0] + 84, LAY["fs"][1] - 52),
+        (10, 54, LAY["jackY"] - 44), (11, 563, LAY["jackY"] - 44)]
     for n, x, y in marks:
         cx, cy, r = x * K, y * K, 24
         dr.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255), outline=(214, 48, 28), width=5)
@@ -57,41 +56,43 @@ else:
     annotated = os.path.join(TMP, "freakout_annotated.png"); ann.save(annotated)
 
     def crop_u(img_, box):
-        k = img_.height / 958.0                       # chaque capture a sa propre taille
+        k = img_.height / 900.0                       # chaque capture a sa propre taille
         return img_.crop(tuple(int(v * k) for v in box)).resize((int((box[2] - box[0]) * 2), int((box[3] - box[1]) * 2)), Image.LANCZOS)
     def strip(images, path, gap=16):
         h = max(i.height for i in images)
-        s = Image.new("RGB", (sum(i.width for i in images) + gap * (len(images) - 1), h), (255, 255, 255))
+        s_ = Image.new("RGB", (sum(i.width for i in images) + gap * (len(images) - 1), h), (255, 255, 255))
         x = 0
-        for i in images: s.paste(i, (x, 0)); x += i.width + gap
-        s.save(path); return path
+        for i in images: s_.paste(i, (x, 0)); x += i.width + gap
+        s_.save(path); return path
 
-    # echelle de LED : effet actif (LED centrale), montee du larsen, pleine intensite
-    lb = (186, 70, 270, 440)
+    # echelle de LED : effet actif (LED centrale), bypass, montee du larsen, pleine intensite
+    lb = (98, 48, 176, 450)
     leds_img = strip([crop_u(shot(p), lb) for p in ("freakout_default.png", "freakout_bypass.png", "freakout_bloom.png", "freakout_full.png")],
                      os.path.join(TMP, "freakout_leds.png"))
     # inverseurs (OFF / ON) et footswitch (relache / enfonce)
-    tb = (285, 120, 380, 420)
-    fb = (318, 685, 446, 810)
-    ctl_img = strip([crop_u(shot("freakout_full.png"), tb), crop_u(shot("freakout_pressed.png"), tb),
+    tb = (188, 50, 308, 456)
+    fb = (LAY["fs"][0] - 86, LAY["fs"][1] - 86, LAY["fs"][0] + 86, LAY["fs"][1] + 86)
+    ctl_img = strip([crop_u(shot("freakout_status.png"), tb), crop_u(shot("freakout_pressed.png"), tb),
                      crop_u(shot("freakout_full.png"), fb), crop_u(shot("freakout_pressed.png"), fb)], os.path.join(TMP, "freakout_ctl.png"))
     # ecran
     disp_img = os.path.join(TMP, "freakout_disp.png")
-    strip([crop_u(shot("freakout_bloom.png"), (172, 460, 590, 548)), crop_u(shot("freakout_status.png"), (172, 460, 590, 548))], disp_img, gap=10)
+    dbox = (dsp[0] - 6, dsp[1] - 6, dsp[0] + dsp[2] + 6, dsp[1] + dsp[3] + 6)
+    strip([crop_u(shot("freakout_bloom.png"), dbox), crop_u(shot("freakout_status.png"), dbox)], disp_img, gap=10)
     # potards
-    knobs_img = strip([crop_u(shot("freakout_full.png"), (440, 95, 582, 270)), crop_u(shot("freakout_full.png"), (446, 300, 578, 455))],
+    knobs_img = strip([crop_u(shot("freakout_full.png"), (rg[0] - 100, rg[1] - 130, rg[0] + 100, rg[1] + 104)),
+                       crop_u(shot("freakout_full.png"), (ty[0] - 100, ty[1] - 92, ty[0] + 100, ty[1] + 102))],
                       os.path.join(TMP, "freakout_knobs.png"))
 
-    # ---------- couverture : pedale detouree, reflet au sol, halo rouge tres doux ----------
+    # ---------- couverture : pedale detouree avec le canal alpha du fond (boitier + jacks), reflet au sol, halo rouge tres doux ----------
     cov = shot("freakout_full.png")
-    msk = Image.open(os.path.join(ROOT, "tools", "pedal_mask.png")).convert("L").resize(cov.size, Image.LANCZOS)
+    msk = Image.open(os.path.join(ROOT, "background.png")).split()[3].resize(cov.size, Image.LANCZOS)
     cut = Image.new("RGBA", cov.size, (0, 0, 0, 0)); cut.paste(cov, (0, 0), msk)
     cut = cut.crop(cut.getbbox())
     cw, ch = cut.size
     pad = int(cw * 0.16)
     canvas = Image.new("RGBA", (cw + 2 * pad, int(ch * 1.30) + pad), (0, 0, 0, 255))
     yy, xx = np.mgrid[0:canvas.height, 0:canvas.width].astype(np.float64)
-    gcx, gcy = canvas.width / 2, pad + ch * 0.42
+    gcx, gcy = canvas.width / 2, pad + ch * 0.45
     glow = np.exp(-(((xx - gcx) / (cw * 0.62)) ** 2 + ((yy - gcy) / (ch * 0.48)) ** 2)) * 30
     edge = np.clip(np.minimum.reduce([xx, canvas.width - 1 - xx, yy, canvas.height - 1 - yy]) / (pad * 0.9), 0, 1)
     glow *= edge ** 2
@@ -105,6 +106,18 @@ else:
     canvas.alpha_composite(cut, (pad, pad))
     canvas = canvas.crop((0, 0, canvas.width, pad + int(ch * 1.20)))
     cover = os.path.join(TMP, "freakout_cover_cutout.png"); canvas.convert("RGB").save(cover)
+    import shutil
+    os.makedirs(os.path.join(ROOT, "tools", "manual_assets"), exist_ok=True)
+    for n_ in ("annotated", "knobs", "ctl", "leds", "disp", "cover_cutout"):
+        shutil.copy(os.path.join(TMP, "freakout_" + n_ + ".png"), os.path.join(ROOT, "tools", "manual_assets", "freakout_" + n_ + ".png"))
+
+# logo blanc pour la couverture (version blanche du logo officiel : lettres #FFFFFF, barre #919496)
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+import svg_raster
+_white = os.path.join(TMP, "nine_hands_logo_blanc.svg")
+open(_white, "w").write(open(os.path.join(ROOT, "NineHandsLogo.svg")).read().replace('fill="#000000"', 'fill="#FFFFFF"'))
+LOGO_PNG = os.path.join(TMP, "nine_hands_logo_blanc.png")
+Image.fromarray(svg_raster.render(_white, 1200)).save(LOGO_PNG)
 
 def img(path, width):
     im = Image.open(path); h = width * im.height / im.width
@@ -118,7 +131,7 @@ st = {
     "small": ParagraphStyle("small", fontName="Pop", fontSize=8.2, leading=11.5, textColor=GREY),
     "cell": ParagraphStyle("cell", fontName="Pop", fontSize=8.4, leading=11, textColor=DARK),
     "cellb": ParagraphStyle("cellb", fontName="PopM", fontSize=8.4, leading=11, textColor=DARK),
-    "cover": ParagraphStyle("cover", fontName="Bebas", fontSize=54, leading=58, textColor=colors.white, alignment=TA_CENTER),
+    "cover": ParagraphStyle("cover", fontName="Title", fontSize=54, leading=58, textColor=colors.white, alignment=TA_CENTER),
     "coversub": ParagraphStyle("coversub", fontName="Pop", fontSize=12, leading=16, textColor=colors.HexColor("#BDBDBA"), alignment=TA_CENTER),
     "coverlang": ParagraphStyle("coverlang", fontName="PopM", fontSize=8.5, leading=11, textColor=ACC_L),
 }
@@ -144,19 +157,6 @@ def onset_s(v):
     s = 0.03 * 200 ** (v / 10.0)
     return f"{s * 1000:.0f} ms" if s < 1 else f"{s:.1f} s"
 FACT_DESC = {
- "en": ["The setup procedure of the original manual: GAIN, ONSET and TYPE at 12 o'clock, latching footswitch, dry on.",
-        "NAT HI with a little more gain: the feedback picks its own harmonic and jumps around like a cranked amp.",
-        "Settings from the Tape Op review (gain 11 o'clock, onset 1 o'clock, NAT HI) with the footswitch in momentary mode.",
-        "Unison feedback with a fast onset: endless sustain of the played note.",
-        "Octave above (2nd harmonic), fast and loud: the classic screaming lead feedback.",
-        "3rd harmonic (an octave and a fifth up): singing, vocal lead feedback.",
-        "5th harmonic (two octaves and a major third up): the piercing squeal.",
-        "One octave below, slow bloom: a dark drone under sustained notes.",
-        "NAT LOW: natural feedback that never goes to the 5th harmonic, so it never sounds major over minor chords.",
-        "NAT LOW, more gain and a very slow onset: huge swells for doom and post-metal.",
-        "Dry off, unison: the note only appears as it swells in, like an EBow.",
-        "Dry off, 3rd harmonic: a ghostly, theremin-like line above what you play.",
-        "Near full gain, instant onset, momentary: hit the footswitch for an immediate burst of feedback."],
  "fr": ["La procédure de réglage du manuel d'origine : GAIN, ONSET et TYPE à 12 h, footswitch à accrochage, DRY en marche.",
         "NAT HI avec un peu plus de gain : le larsen choisit lui-même son harmonique et saute de l'une à l'autre, comme un ampli à fond.",
         "Le réglage du test Tape Op (gain à 11 h, onset à 13 h, NAT HI) avec le footswitch en mode momentané.",
@@ -174,76 +174,8 @@ FACT_DESC = {
 def pc(v): return f"{round(v * 10)} %"
 
 T = {}
-T["en"] = dict(
- lang="ENGLISH", sub="Natural harmonic feedback generator", ver="User manual · version " + VERSION,
- intro_t="1. Introduction",
- intro=["<b>FreakOut</b> is a NINE HANDS | DSP VST3 plugin that creates real-sounding guitar feedback at any volume, clean or distorted, through headphones or a quiet amp simulator. It is modelled on the behaviour of the <b>DigiTech FreqOut</b> Natural Feedback Creator: same controls, same seven feedback types, same LED ladder, same momentary and dry switches.",
-        "Like the pedal, FreakOut follows the note you play, chooses which harmonic of that note will feed back, then makes it bloom: the feedback starts inaudible, grows exponentially as the note sustains, and saturates gently at the top. It follows vibrato, bends and legato, collapses when you mute the strings and rebuilds on every new pick attack.",
-        "The pedal is entirely digital and no schematic exists; FreakOut was built from the original manual, reviews (Sound On Sound, MusicRadar, Tape Op, Guitar Interactive) and the documented behaviour of each control."],
- inst_t="2. Installation",
- inst=[("Windows", "Copy <b>FreakOut.vst3</b> to <b>C:\\Program Files\\Common Files\\VST3</b>. In Reaper: Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <i>Re-scan</i>. The plugin appears as <b>FreakOut (NINE HANDS | DSP)</b>."),
-       ("macOS", "Unzip the archive and copy <b>FreakOut.vst3</b> to <b>/Library/Audio/Plug-Ins/VST3</b> (or ~/Library/Audio/Plug-Ins/VST3). The build is universal (Apple Silicon and Intel) and ad hoc signed; if macOS blocks it, run <i>xattr -cr</i> on the file. Then re-scan in Reaper.")],
- ov_t="3. Interface overview",
- ov_rows=[["#", "Control", "Role"], ["1", "FEEDBACK ladder", "9 red LEDs: centre = effect on; pairs light from the centre outward as the feedback builds"],
-          ["2", "MOMENTARY", "On: feedback only while the footswitch is held. Off: latching footswitch"],
-          ["3", "DRY", "On: guitar + feedback. Off: feedback only (swell effect)"],
-          ["4", "RANGE – GAIN", "Centre cap of the concentric knob: amount of feedback"],
-          ["5", "RANGE – ONSET", "Knurled outer skirt: time for the feedback to reach full strength"],
-          ["6", "TYPE", "Which harmonic feeds back: SUB, 1ST, 2ND, 3RD, 5TH, NAT LOW, NAT HI"],
-          ["7", "Display", "Value of the control you touch, otherwise the harmonic, frequency and note feeding back"],
-          ["8", "Preset bar", "Arrows = previous / next preset, name = preset menu"],
-          ["9", "Footswitch", "Effect on / off (or hold, in momentary mode)"],
-          ["10 / 11", "OUT / IN", "Output on the left, input on the right, as on a real pedal"]],
- ctl_t="4. Controls",
- ctl=[("RANGE – GAIN (centre cap)", "Sets how loud the feedback becomes, relative to the attack of the note you played: from nothing to about +6 dB above the attack. At 12 o'clock the feedback settles a little below the attack level. Higher settings give more sustain and a slightly richer, saturated tone at the top of the bloom."),
-      ("RANGE – ONSET (outer skirt)", "Sets the time the feedback takes to reach full strength: 30 ms fully counter-clockwise, about 0.4 s at 12 o'clock, 6 s fully clockwise. The growth is exponential, like real feedback: nothing for a moment, then a fast swell. Drag the cap for GAIN and the skirt for ONSET; double-click returns to 12 o'clock, Shift gives fine adjustment."),
-      ("TYPE", "Chooses the harmonic that feeds back. A harmonic is a multiple of the frequency of your note: <b>1ST</b> = unison, <b>2ND</b> = octave up, <b>3RD</b> = octave and a fifth, <b>5TH</b> = two octaves and a major third, <b>SUB</b> = one octave below (on notes too low to be heard an octave down, it falls back to unison). <b>NAT LOW</b> and <b>NAT HI</b> act like natural feedback: the harmonic depends on what is really ringing in the string, so the same note can feed back differently each time. NAT LOW stays in the lower harmonics (never the 5th or above, so no major third over minor chords); NAT HI reaches higher partials and jumps from one partial to another more readily, typically dropping lower as the note decays. Turning TYPE while it feeds back moves the feedback to the new harmonic."),
-      ("Steering the natural types", "As with the pedal: play softer, roll the tone down or use the neck pickup for lower feedback; pick harder, open the tone or use the bridge pickup for higher feedback."),
-      ("DRY", "On: your guitar passes through with the feedback added on top. Off: while the effect is on, only the feedback is heard, so every note swells in from silence, like an EBow or a theremin. When the effect is bypassed the dry signal always passes.")],
- knobs_cap="RANGE (GAIN cap and ONSET skirt) and TYPE: only the white markers turn, in the slight perspective of the pedal.",
- fs_t="5. Footswitch, LEDs and modes",
- fs=["<b>Footswitch</b>: click to switch the effect on or off; the button goes down into its nut while you press. With <b>MOMENTARY ON</b> the effect is only active while you hold the mouse button (or the MIDI footswitch). Engaging the effect while a note rings starts the feedback from that note.",
-     "<b>LED ladder</b>: the centre LED shows that the effect is on; the others light in pairs from the centre outward as the feedback builds, so the ladder shows the onset in real time. The light of the LEDs falls on the panel around them.",
-     "<b>Trigger sensitivity</b> (right-click menu): Low for hot pickups or noisy rooms, Normal, High for low-output pickups and soft playing.",
-     "Every parameter can be automated in the DAW (Gain, Onset, Type, Momentary, Dry, Effect On, plus Trigger sensitivity and MIDI footswitch mode)."],
- midi_t="6. MIDI",
- midi_txt=["<b>MIDI Learn on every control</b>: right-click a control (GAIN cap, ONSET skirt, TYPE, MOMENTARY, DRY or the footswitch). The top of the menu shows <b>MIDI Learn: &lt;Name&gt; (CC n / none)</b> with the current assignment, <b>Clear MIDI: &lt;Name&gt;</b> and, while a learn is waiting, <b>Cancel MIDI learn</b>. Choose MIDI Learn, then move a pedal or knob or press a footswitch of your controller: the display shows <b>MIDI LEARN: move a control for &lt;Name&gt;</b>, then <b>&lt;Name&gt; = CC n</b> for 2 seconds.",
-           "No CC is assigned by default: every control you want to drive from MIDI is assigned with MIDI Learn. Every right-click menu (on a control or anywhere else on the pedal) also has the <b>MIDI map</b> submenu: <b>Learn</b> for each of the 6 controls (with its current assignment, or <b>none</b>), <b>Cancel MIDI learn</b> and <b>Clear all MIDI assignments</b>, which removes every assignment, plus a reminder of how the controls react. Choosing the pending item again also cancels the learn.",
-           "A CC number can only drive one control: learning a CC that is already used removes it from the other control. Learn accepts CC 0 to 119; FreakOut listens on all MIDI channels. <b>Assignments are saved with the project</b> (and with DAW presets). A project made with an earlier version that still used the former factory numbers (CC 20 to 25) opens with no assignment: learn the controls you need again. A project in which you had changed an assignment keeps its assignments as saved."],
- midi_hdr=["Control", "Type"],
- midi=[["Gain (GAIN cap)", "Continuous 0-127; 14-bit with CC n+32 when the learnt CC is 0-31"], ["Onset (ONSET skirt)", "Continuous 0-127; 14-bit with CC n+32 when the learnt CC is 0-31"],
-       ["Type", "7-position selector: 0-127 split into 7 equal zones (SUB to NAT HI)"],
-       ["Momentary", "Switch: 64 and above = ON, below 64 = OFF"], ["Dry", "Switch: 64 and above = ON, below 64 = OFF"],
-       ["Footswitch", "Footswitch: latching (127 = on / 0 = off) or toggle on each press; with MOMENTARY ON it acts while held"]],
- midi2=["<b>MIDI footswitch mode</b>: right-click &gt; <b>Settings</b> &gt; <b>MIDI footswitch latching (127 = on / 0 = off)</b> (default) or <b>MIDI footswitch toggles on each press</b>. With MOMENTARY ON the MIDI footswitch always works while held.",
-        "<b>Expression pedals</b> on GAIN or ONSET are smoothed: ramp between two messages, 14-bit CC accepted, pedal travel learnt automatically and small dead zones at both ends.",
-        "<b>Program Change</b> 1-13 loads the factory presets."],
- ctl_cap="MOMENTARY / DRY switches (lever up = ON), and the footswitch released / pressed.",
- led_cap="The LED ladder: effect on (centre LED), bypass, feedback building, feedback at full strength.",
- win_t="7. Window and display",
- win=["Right-click &gt; <b>Plugin size</b>: <b>60 %</b>, <b>75 %</b>, <b>100 %</b> resizes this window, and <b>(default)</b> is shown next to the default size you chose. At the bottom of the same menu, <b>Default size (new windows)</b> chooses the size at which every new FreakOut window opens (a setting shared by all instances and saved on the computer); the open window takes that size at once. The window can never be made smaller than 60 %; you can also drag the corner to enlarge it up to 150 % (proportions locked).",
-      "The display shows the value of the control you just moved for 2.5 s. The rest of the time it shows what is feeding back: harmonic (H1, H2… or SUB), frequency and note name. The preset bar below works like the pedal's menu: arrows for previous / next, click the name for the full list (factory presets, 9 user slots to load or save)."],
- disp_cap="Display: live feedback information, then the value of the control being moved.",
- pre_t="8. Presets",
- pre=["13 factory presets are included (also in the DAW preset menu and on MIDI Program Change). Nine user slots can be saved from the preset menu."],
- fac_hdr=["#", "Preset", "Gain / Onset", "Type", "Switches", "Description"],
- tips_t="9. Playing tips",
- tips=["In Reaper put FreakOut first in the chain, before Ampire or any amp simulator, as the original manual recommends: it needs the clean guitar signal to read the harmonics. A compressor or buffer before it is fine.",
-       "Mute the strings you are not playing: like real feedback, unwanted ringing strings make the feedback less predictable.",
-       "Learn GAIN or ONSET on an expression pedal to ride the feedback with your foot, like moving closer to the amp.",
-       "Low tunings: the pitch detection follows down to 30 Hz, so a 7-string tuned to G (49 Hz) or lower works. On very low notes, 2ND or 3RD usually gives the most audible feedback; SUB falls back to unison below about 50 Hz.",
-       "For EBow / theremin lines: DRY off, 1ST or 3RD, onset around 1 o'clock, then add delay and reverb after the amp simulator.",
-       "For classic \"amp on 11\" feedback on held notes: NAT HI, gain 1 o'clock, onset 11 o'clock, MOMENTARY on and press when you want the note to scream."],
- tech_t="10. Technical specifications",
- tech=[["Format", "VST3, Windows (x64) and macOS (Apple Silicon + Intel)"], ["Channels", "Mono or stereo (the detection uses the sum of the channels)"],
-       ["Latency", "None (0 samples)"], ["Pitch range", "30 Hz to 1.6 kHz fundamental, feedback up to 8.5 kHz"],
-       ["Engine", "YIN pitch detection, phase-locked harmonic oscillators, exponential bloom, natural partial selection"],
-       ["Sample rates", "44.1 to 192 kHz"], ["Version", VERSION],
-       ["Window", "60 % / 75 % / 100 % (Plugin size), default size of new windows to choose, up to 150 %, never smaller than 60 %; anti-freeze v2 on Windows (software rendering, display caches rebuilt by a timer, redraw watchdog, no call to the host from the audio thread)"],
-       ["MIDI", "MIDI Learn on all 6 controls (saved with the project), no CC assigned by default, 14-bit CC (n+32), Program Change 1-13, all channels"]],
-)
 T["fr"] = dict(
- lang="FRANÇAIS", sub="Générateur de larsen harmonique naturel", ver="Notice d'utilisation · version " + VERSION,
+ lang="FRANÇAIS", sub="Larsen naturel",
  intro_t="1. Présentation",
  intro=["<b>FreakOut</b> est un plugin VST3 NINE HANDS | DSP qui crée un larsen de guitare naturel à n'importe quel volume, en son clair ou saturé, au casque ou avec un simulateur d'ampli à faible volume. Il reprend le fonctionnement de la <b>DigiTech FreqOut</b> (Natural Feedback Creator) : mêmes commandes, mêmes sept types de larsen, même échelle de LED, mêmes inverseurs MOMENTARY et DRY.",
         "Comme la pédale, FreakOut suit la note jouée, choisit l'harmonique de cette note qui va larsener, puis la fait « fleurir » : le larsen part inaudible, grossit de façon exponentielle tant que la note tient, puis sature en douceur. Il suit le vibrato, les tirés et le legato, retombe quand on étouffe les cordes et se reconstruit à chaque nouvelle attaque.",
@@ -268,7 +200,7 @@ T["fr"] = dict(
       ("TYPE", "Choisit l'harmonique qui larsène. Une harmonique est un multiple de la fréquence de la note : <b>1ST</b> = unisson, <b>2ND</b> = octave au-dessus, <b>3RD</b> = octave + quinte, <b>5TH</b> = deux octaves + tierce majeure, <b>SUB</b> = octave en dessous (sur les notes trop graves pour être entendues une octave plus bas, il repasse à l'unisson). <b>NAT LOW</b> et <b>NAT HI</b> se comportent comme un larsen naturel : l'harmonique dépend de ce qui sonne réellement dans la corde, la même note peut donc larsener différemment à chaque fois. NAT LOW reste dans les harmoniques basses (jamais la 5e ni au-dessus, donc pas de tierce majeure sur un accord mineur) ; NAT HI monte plus haut et saute plus volontiers d'un partiel à l'autre, en redescendant en général quand la note s'éteint. Tourner TYPE pendant que ça larsène fait passer le larsen sur la nouvelle harmonique."),
       ("Orienter les types naturels", "Comme sur la pédale : jouez plus doucement, baissez la tonalité ou prenez le micro manche pour un larsen plus grave ; attaquez plus fort, ouvrez la tonalité ou prenez le micro chevalet pour un larsen plus aigu."),
       ("DRY", "On : la guitare passe, le larsen s'ajoute par-dessus. Off : quand l'effet est en marche, on n'entend que le larsen, chaque note arrive donc en gonflant depuis le silence, comme avec un EBow ou un thérémine. Effet coupé, le signal sec passe toujours.")],
- knobs_cap="RANGE (chapeau GAIN et jupe ONSET) et TYPE : seuls les repères blancs tournent, dans la légère perspective de la pédale.",
+ knobs_cap="RANGE (chapeau GAIN au centre, jupe ONSET autour) et TYPE : seuls les repères crème tournent, reflets et moletage restent fixes.",
  fs_t="5. Footswitch, LED et modes",
  fs=["<b>Footswitch</b> : un clic met l'effet en marche ou le coupe ; le bouton descend dans son écrou tant qu'on appuie. Avec <b>MOMENTARY ON</b>, l'effet n'agit que tant que le bouton de la souris (ou le footswitch MIDI) est maintenu. Enclencher l'effet pendant qu'une note sonne fait partir le larsen de cette note.",
      "<b>Échelle de LED</b> : la LED du centre indique que l'effet est en marche ; les autres s'allument par paires du centre vers l'extérieur pendant que le larsen monte : l'échelle montre la montée en temps réel. La lumière des LED éclaire la façade autour d'elles.",
@@ -306,26 +238,16 @@ T["fr"] = dict(
  tech=[["Format", "VST3, Windows (x64) et macOS (Apple Silicon + Intel)"], ["Canaux", "Mono ou stéréo (la détection utilise la somme des canaux)"],
        ["Latence", "Aucune (0 échantillon)"], ["Plage de hauteur", "Fondamentale de 30 Hz à 1,6 kHz, larsen jusqu'à 8,5 kHz"],
        ["Moteur", "Détection de hauteur YIN, oscillateurs harmoniques verrouillés en phase, montée exponentielle, choix naturel des partiels"],
-       ["Fréquences", "44,1 à 192 kHz"], ["Version", VERSION],
-       ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; anti-gel v2 sous Windows (rendu logiciel, caches d'affichage refaits par un timer, chien de garde de redessin, aucun appel à l'hôte depuis le thread audio)"],
+       ["Fréquences", "44,1 à 192 kHz"],        ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; anti-gel v2 sous Windows (rendu logiciel, caches d'affichage refaits par un timer, chien de garde de redessin, aucun appel à l'hôte depuis le thread audio)"],
        ["MIDI", "MIDI Learn sur les 6 commandes (sauvegardé avec le projet), aucun CC assigné par défaut, CC 14 bits (n+32), Program Change 1 à 13, tous canaux"]],
 )
 
 W = A4[0] - 36 * mm
 def section(lang):
     t = T[lang]; f = []
+    COVER_TEXT.update(lang=t["lang"], sub=t["sub"])
     f.append(NextPageTemplate("p"))
-    f.append(Spacer(1, 2 * mm))
-    f.append(P(t["lang"], "coverlang"))
-    f.append(Spacer(1, 2 * mm))
-    f.append(img(cover, W * 0.56))
-    f.append(Spacer(1, 2 * mm))
-    f.append(P("F R E A K O U T", "cover"))
-    f.append(P(t["sub"], "coversub"))
-    f.append(Spacer(1, 2 * mm))
-    f.append(P(t["ver"], "coversub"))
-    f.append(Spacer(1, 6 * mm))
-    f.append(img(os.path.join(ROOT, "assets", "logo_studio_wiga_blanc.png"), 52 * mm))
+    f.append(Spacer(1, 1))                       # couverture : tout est dessine par cover_bg (gabarit fixe)
     f.append(PageBreak())
     f.append(P(t["intro_t"], "h1")); f += [P(x) for x in t["intro"]]
     f.append(P(t["inst_t"], "h1"))
@@ -370,14 +292,38 @@ def deco(c, doc):
     c.restoreState()
 
 doc = BaseDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=18 * mm,
-                      title="FreakOut - Manual / Notice v" + VERSION, author="NINE HANDS | DSP")
+                      title="FreakOut - Notice v" + VERSION, author="NINE HANDS | DSP")
+# ---- Couverture « minimale » (modele 6, valide nov. 2026) : gabarit fixe commun a toutes les notices ----
+# Mesures en mm depuis le HAUT de la page A4, sauf le logo et le bandeau (depuis le bas). Aucun autre element.
+COVER_TEXT = {}
+COVER_NAME = "FREAKOUT"
+PEDAL_H, PEDAL_MAXW, PEDAL_TOP = 82 * mm, 115 * mm, 84 * mm
+LANG_TOP = 18 * mm
+NAME_TOP, NAME_PT = 194 * mm, 30
+SUB_TOP, SUB_PT = 208 * mm, 10
+LOGO_W, LOGO_BOTTOM = 38 * mm, 22 * mm
+BAND_H = 3 * mm
 def cover_bg(c, doc):
     c.saveState(); c.setFillColor(colors.black); c.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
-    c.setFillColor(ACC); c.rect(0, A4[1] - 3 * mm, A4[0], 3 * mm, stroke=0, fill=1); c.restoreState()
+    c.setFillColor(ACC); c.rect(0, 0, A4[0], BAND_H, stroke=0, fill=1)
+    def line(text, top, font, size, cs, col):
+        w = pdfmetrics.stringWidth(text, font, size) + cs * (len(text) - 1)
+        tx = c.beginText((A4[0] - w) / 2, A4[1] - top - size * 0.8); tx.setFont(font, size); tx.setCharSpace(cs)
+        tx.setFillColor(col); tx.textOut(text); c.drawText(tx)
+    line(COVER_TEXT["lang"], LANG_TOP, "PopM", 8.5, 0, ACC_L)
+    ci = Image.open(cover); iw, ih = ci.size
+    cw = iw / 1.32; ch = (ih - int(cw * 0.16)) / 1.2; pad = int(cw * 0.16)     # geometrie de freakout_cover_cutout.png
+    k = min(PEDAL_H / ch, PEDAL_MAXW / cw)
+    dw, dh = iw * k, ih * k
+    y0 = A4[1] - (PEDAL_TOP + (PEDAL_H - ch * k) / 2) + pad * k
+    c.drawImage(cover, (A4[0] - dw) / 2, y0 - dh, dw, dh)
+    line(COVER_NAME, NAME_TOP - NAME_PT * 0.02, "Title", NAME_PT, NAME_PT * 0.5, colors.white)
+    line(COVER_TEXT["sub"], SUB_TOP, "Pop", SUB_PT, 1.5, colors.HexColor("#BDC4B8"))
+    lw, lh = Image.open(LOGO_PNG).size
+    c.drawImage(LOGO_PNG, (A4[0] - LOGO_W) / 2, LOGO_BOTTOM, LOGO_W, LOGO_W * lh / lw, mask="auto")
+    c.restoreState()
 doc.addPageTemplates([PageTemplate(id="cover", frames=[Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="fc")], onPage=cover_bg),
                       PageTemplate(id="p", frames=[Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="f")], onPage=deco)])
-en = section("en"); fr = section("fr")
-en[-1:] = [NextPageTemplate("cover"), PageBreak()]
-story = en + fr[:-1]
-doc.build(story)
+fr = section("fr")              # notice en francais uniquement (couverture noire FRANCAIS)
+doc.build(fr[:-1])
 print(OUT)
