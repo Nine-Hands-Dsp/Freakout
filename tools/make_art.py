@@ -121,6 +121,10 @@ tex = cv2.resize(tex, (int(math.ceil(tex.shape[1] * sc)), int(math.ceil(tex.shap
 ty0, tx0 = (tex.shape[0] - H) // 2, (tex.shape[1] - W) // 2
 tex = np.clip(tex[ty0:ty0 + H, tx0:tx0 + W], 0, 255)
 tex *= 170.0 / tex.mean()                                    # niveau moyen du metal de la pedale
+TEX_CONTRAST = 0.80                                          # contraste de la texture -20 % (v1.3.3)
+_m = tex.mean((0, 1), keepdims=True); tex = _m + (tex - _m) * TEX_CONTRAST
+TEX_CONTRAST = 0.80                                          # contraste de la texture -20 % (demande de l'utilisateur, v1.3.3)
+tex = 170.0 + (tex - 170.0) * TEX_CONTRAST
 sheen = 0.55 + 0.45 * np.exp(-((UX - 210 - (UY - 300) * 0.22) / 210.0) ** 2)
 grad = 1.0 - 0.09 * (UY / FH) + 0.04 * (1 - UX / FW)
 light = (0.90 + 0.17 * sheen) * grad * 1.03
