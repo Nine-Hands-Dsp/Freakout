@@ -4,13 +4,13 @@
 namespace layout
 {
     constexpr float frameW = 617.50f, frameH = 900.00f;   // pedale plein cadre (jacks aux bords gauche / droit)
-    const juce::Point<float> ledPos[9] = { { 132.00f, 82.00f }, { 132.00f, 124.00f }, { 132.00f, 166.00f }, { 132.00f, 208.00f }, { 132.00f, 250.00f }, { 132.00f, 292.00f }, { 132.00f, 334.00f }, { 132.00f, 376.00f }, { 132.00f, 418.00f } };
+    const juce::Point<float> ledPos[9] = { { 158.00f, 82.00f }, { 158.00f, 124.00f }, { 158.00f, 166.00f }, { 158.00f, 208.00f }, { 158.00f, 250.00f }, { 158.00f, 292.00f }, { 158.00f, 334.00f }, { 158.00f, 376.00f }, { 158.00f, 418.00f } };
     const float ledS = 23.00f;   // sprite de la lentille allumee
-    const juce::Rectangle<float> glowRect { 76.00f, 26.00f, 112.00f, 448.00f };
+    const juce::Rectangle<float> glowRect { 102.00f, 26.00f, 112.00f, 448.00f };
     const juce::Point<float> rangePos { 448.00f, 172.00f }, typePos { 448.00f, 360.00f };
     const float skirtR = 64.00f, capR = 37.00f, typeR = 42.00f;
     // repere creme des potards (photo) : de 0,28 a 0,90 du rayon sur le dessus
-    const juce::Point<float> momentaryPos { 248.00f, 164.00f }, dryPos { 248.00f, 360.00f }; const float togS = 116.00f;
+    const juce::Point<float> momentaryPos { 274.00f, 164.00f }, dryPos { 274.00f, 360.00f }; const float togS = 116.00f;
     const juce::Point<float> fsPos { 308.75f, 768.00f }; const float footR = 40.16f, fsS = 201.40f;
     const juce::Rectangle<float> displayRect { 84.00f, 478.00f, 449.50f, 86.00f }, statusRect { 96.00f, 484.00f, 425.50f, 40.00f }, presetRect { 96.00f, 528.00f, 425.50f, 28.00f };
     const float jackY = 521.00f;
@@ -19,13 +19,13 @@ namespace layout
     // serigraphie vectorielle : texte, police (0 medium, 1 bold, 2 light, 3 regular), taille, espacement, centre, rotation, encre (0 noire, 1 claire)
     struct Txt { const char* s; int font; float em, track, x, y, rot; int ink; };
     const Txt texts[] = {
-        { "FEEDBACK", 1, 15.00f, 4.60f, 82.00f, 249.00f, 90.00f, 1 },
-        { "MOMENTARY", 1, 14.00f, 1.60f, 248.00f, 68.00f, 0.00f, 1 },
-        { "ON", 0, 13.00f, 2.00f, 248.00f, 106.00f, 0.00f, 1 },
-        { "OFF", 0, 13.00f, 2.00f, 248.00f, 224.00f, 0.00f, 1 },
-        { "DRY", 1, 16.00f, 1.60f, 248.00f, 264.00f, 0.00f, 1 },
-        { "ON", 0, 13.00f, 2.00f, 248.00f, 302.00f, 0.00f, 1 },
-        { "OFF", 0, 13.00f, 2.00f, 248.00f, 420.00f, 0.00f, 1 },
+        { "FEEDBACK", 1, 15.00f, 4.60f, 108.00f, 249.00f, 90.00f, 1 },
+        { "MOMENTARY", 1, 14.00f, 1.60f, 274.00f, 68.00f, 0.00f, 1 },
+        { "ON", 0, 13.00f, 2.00f, 274.00f, 106.00f, 0.00f, 1 },
+        { "OFF", 0, 13.00f, 2.00f, 274.00f, 224.00f, 0.00f, 1 },
+        { "DRY", 1, 16.00f, 1.60f, 274.00f, 264.00f, 0.00f, 1 },
+        { "ON", 0, 13.00f, 2.00f, 274.00f, 302.00f, 0.00f, 1 },
+        { "OFF", 0, 13.00f, 2.00f, 274.00f, 420.00f, 0.00f, 1 },
         { "RANGE", 1, 14.50f, 3.00f, 448.00f, 63.50f, 0.00f, 1 },
         { "MIN", 0, 10.00f, 1.00f, 382.00f, 240.00f, 0.00f, 0 },
         { "MAX", 0, 10.00f, 1.00f, 514.00f, 240.00f, 0.00f, 0 },
@@ -44,23 +44,23 @@ namespace layout
         { "OUT", 1, 12.50f, 1.00f, 61.50f, 514.00f, 0.00f, 0 },
         { "IN", 1, 12.50f, 1.00f, 556.00f, 514.00f, 0.00f, 0 },
         { "FREAKOUT", 1, 62.00f, 3.00f, 308.75f, 618.00f, 0.00f, 0 },
-        { "HARMONIC  FEEDBACK  GENERATOR", 0, 13.00f, 3.40f, 308.75f, 668.00f, 0.00f, 0 }
+        { "HARMONIC  FEEDBACK  GENERATOR", 0, 13.00f, 4.21f, 308.75f, 668.00f, 0.00f, 0 }
     };
     struct Seg { float x0, y0, x1, y1, w; int ink; };
     const Seg lines[] = {
-        { 147.00f, 82.00f, 153.20f, 82.00f, 1.60f, 1 },
-        { 147.00f, 124.00f, 155.40f, 124.00f, 1.60f, 1 },
-        { 147.00f, 166.00f, 157.60f, 166.00f, 1.60f, 1 },
-        { 147.00f, 208.00f, 159.80f, 208.00f, 1.60f, 1 },
-        { 147.00f, 250.00f, 162.00f, 250.00f, 1.60f, 1 },
-        { 147.00f, 292.00f, 159.80f, 292.00f, 1.60f, 1 },
-        { 147.00f, 334.00f, 157.60f, 334.00f, 1.60f, 1 },
-        { 147.00f, 376.00f, 155.40f, 376.00f, 1.60f, 1 },
-        { 147.00f, 418.00f, 153.20f, 418.00f, 1.60f, 1 },
-        { 162.00f, 68.00f, 162.00f, 430.00f, 1.20f, 1 },
-        { 204.00f, 82.00f, 292.00f, 82.00f, 1.30f, 1 },
-        { 204.00f, 278.00f, 292.00f, 278.00f, 1.30f, 1 },
-        { 188.00f, 244.00f, 308.00f, 244.00f, 2.40f, 1 },
+        { 173.00f, 82.00f, 179.20f, 82.00f, 1.60f, 1 },
+        { 173.00f, 124.00f, 181.40f, 124.00f, 1.60f, 1 },
+        { 173.00f, 166.00f, 183.60f, 166.00f, 1.60f, 1 },
+        { 173.00f, 208.00f, 185.80f, 208.00f, 1.60f, 1 },
+        { 173.00f, 250.00f, 188.00f, 250.00f, 1.60f, 1 },
+        { 173.00f, 292.00f, 185.80f, 292.00f, 1.60f, 1 },
+        { 173.00f, 334.00f, 183.60f, 334.00f, 1.60f, 1 },
+        { 173.00f, 376.00f, 181.40f, 376.00f, 1.60f, 1 },
+        { 173.00f, 418.00f, 179.20f, 418.00f, 1.60f, 1 },
+        { 188.00f, 68.00f, 188.00f, 430.00f, 1.20f, 1 },
+        { 230.00f, 82.00f, 318.00f, 82.00f, 1.30f, 1 },
+        { 230.00f, 278.00f, 318.00f, 278.00f, 1.30f, 1 },
+        { 214.00f, 244.00f, 334.00f, 244.00f, 2.40f, 1 },
         { 412.50f, 233.49f, 408.50f, 240.42f, 1.70f, 0 },
         { 402.36f, 226.39f, 399.79f, 229.45f, 1.20f, 0 },
         { 393.61f, 217.64f, 390.55f, 220.21f, 1.20f, 0 },
@@ -137,7 +137,7 @@ namespace layout
         { 384.58f, 754.63f, 387.53f, 754.11f, 1.00f, 0 }
     };
     struct Tri { float x0, y0, x1, y1, x2, y2; int ink; };
-    const Tri tris[] = { { 162.00f, 60.00f, 157.50f, 69.00f, 166.50f, 69.00f, 1 }, { 162.00f, 438.00f, 157.50f, 429.00f, 166.50f, 429.00f, 1 }, { 56.50f, 530.00f, 64.50f, 525.50f, 64.50f, 534.50f, 0 }, { 561.00f, 530.00f, 553.00f, 525.50f, 553.00f, 534.50f, 0 } };
+    const Tri tris[] = { { 188.00f, 60.00f, 183.50f, 69.00f, 192.50f, 69.00f, 1 }, { 188.00f, 438.00f, 183.50f, 429.00f, 192.50f, 429.00f, 1 }, { 56.50f, 530.00f, 64.50f, 525.50f, 64.50f, 534.50f, 0 }, { 561.00f, 530.00f, 553.00f, 525.50f, 553.00f, 534.50f, 0 } };
     // pictogrammes concentriques (centre, plein = GAIN / anneau = ONSET)
     struct Ico { float x, y; bool inner; };
     const Ico icons[] = { { 380.05f, 264.00f, true }, { 523.55f, 264.00f, false } };

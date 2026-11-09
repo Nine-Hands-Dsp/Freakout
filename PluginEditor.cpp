@@ -630,6 +630,8 @@ void FreakoutAudioProcessorEditor::buildPrint()
             x += GlyphArrangement::getStringWidth (font, ch) + t.track;
         }
         Path p; ga.createPath (p);
+        if (t.rot == 0.0f && ! p.isEmpty())        // centrage sur l'encre (et non sur les chasses) : titre et sous-titre au milieu exact
+            p.applyTransform (AffineTransform::translation (-p.getBounds().getCentreX(), 0.0f));
         p.applyTransform (AffineTransform::rotation (-t.rot * MathConstants<float>::pi / 180.0f).translated (t.x, t.y));
         (t.ink == 1 ? printLight : printDark).addPath (p);
     }

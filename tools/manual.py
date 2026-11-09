@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -66,11 +66,11 @@ else:
         s_.save(path); return path
 
     # echelle de LED : effet actif (LED centrale), bypass, montee du larsen, pleine intensite
-    lb = (98, 48, 176, 450)
+    lb = (led_mid[0] - 34, 48, led_mid[0] + 44, 450)
     leds_img = strip([crop_u(shot(p), lb) for p in ("freakout_default.png", "freakout_bypass.png", "freakout_bloom.png", "freakout_full.png")],
                      os.path.join(TMP, "freakout_leds.png"))
     # inverseurs (OFF / ON) et footswitch (relache / enfonce)
-    tb = (188, 50, 308, 456)
+    tb = (tg["momentary"][0] - 60, 50, tg["momentary"][0] + 60, 456)
     fb = (LAY["fs"][0] - 86, LAY["fs"][1] - 86, LAY["fs"][0] + 86, LAY["fs"][1] + 86)
     ctl_img = strip([crop_u(shot("freakout_status.png"), tb), crop_u(shot("freakout_pressed.png"), tb),
                      crop_u(shot("freakout_full.png"), fb), crop_u(shot("freakout_pressed.png"), fb)], os.path.join(TMP, "freakout_ctl.png"))

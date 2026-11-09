@@ -51,13 +51,14 @@ EDGE = 11.0                                      # arete arrondie de l'aluminium
 CX = FW / 2
 FRAME = (BX0 + 17.0, 17.0, BX1 - BX0 - 34.0, FH - 34.0, 24.0)       # cadre grave (vectoriel)
 
-PANEL_A = (58.0, 42.0, 118.0, 414.0)             # colonne FEEDBACK (x, y, w, h)
-PANEL_B = (188.0, 42.0, 120.0, 414.0)            # colonne MOMENTARY / DRY
+PANEL_DX = 84.0 - 58.0                           # bord gauche de FEEDBACK aligne sur celui de l'ecran (v1.3.1)
+PANEL_A = (58.0 + PANEL_DX, 42.0, 118.0, 414.0)  # colonne FEEDBACK (x, y, w, h)
+PANEL_B = (188.0 + PANEL_DX, 42.0, 120.0, 414.0)           # colonne MOMENTARY / DRY
 PANEL_R = 12.0
-LED_X = 132.0
+LED_X = 132.0 + PANEL_DX
 LEDS = [(LED_X, 82.0 + i * 42.0) for i in range(9)]
 LED_LENS = 9.2
-TOG = {'momentary': (248.0, 164.0), 'dry': (248.0, 360.0)}
+TOG = {'momentary': (248.0 + PANEL_DX, 164.0), 'dry': (248.0 + PANEL_DX, 360.0)}
 TOG_WASHER, TOG_S = 23.5, 116.0
 KX = 448.0                                       # colonne des potards
 RANGE_C = (KX, 172.0); SKIRT_R, CAP_R = 64.0, 37.0
@@ -111,21 +112,25 @@ ndl = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1)
 ndh = np.clip(nx * HV[0] + ny * HV[1] + nz * HV[2], 0, 1)
 flat = np.clip((hgt - EDGE + 0.4) / 0.4, 0, 1)                 # 1 sur le dessus, 0 sur l'arete
 del hgt, nx, ny, nz
-# brossage horizontal : stries fines et longues + bandes plus larges, reflet anisotrope qui glisse en diagonale
-streak = 0.62 * noise(260, 0.55, 1) + 0.38 * noise(70, 0.35, 2)
-band = noise(140, 9, 3)
+# texture d'aluminium brosse fournie par l'utilisateur (assets/kit/texture_alu_brosse.jpg, 4096 px, stries horizontales),
+# a l'echelle 1 (le fond final est reduit de moitie), legere modulation par la lumiere : reflet diagonal + degrade haut / bas
+tex = cv2.imread(os.path.join(ROOT, 'assets', 'kit', 'texture_alu_brosse.jpg'))[..., ::-1].astype(np.float32)
+th, tw = tex.shape[:2]
+if th < H or tw < W:
+    tex = np.tile(tex, (H // th + 1, W // tw + 1, 1))
+ty0, tx0 = (tex.shape[0] - H) // 2, (tex.shape[1] - W) // 2
+tex = tex[ty0:ty0 + H, tx0:tx0 + W]
 sheen = 0.55 + 0.45 * np.exp(-((UX - 210 - (UY - 300) * 0.22) / 210.0) ** 2)
 grad = 1.0 - 0.09 * (UY / FH) + 0.04 * (1 - UX / FW)
-lum = (168.0 + 36.0 * sheen) * grad + 7.0 * streak + 2.6 * band
-del streak, band
-lum += rng.standard_normal((H, W)).astype(np.float32) * 1.4
+light = (0.90 + 0.17 * sheen) * grad * 1.03
+top = tex * light[..., None]
+del tex
 # arete : eclairage par la normale + reflet brillant, sablage leger
 edge_l = 72.0 + 158.0 * ndl + 85.0 * ndh ** 30
-lum = lum * flat + edge_l * (1 - flat)
-del ndl, ndh, edge_l
+edge_l = edge_l + rng.standard_normal((H, W)).astype(np.float32) * 1.4
 tint = np.array([0.985, 0.995, 1.012], np.float32)
-img = lum[..., None] * tint
-del lum
+img = top * flat[..., None] + (edge_l[..., None] * tint) * (1 - flat)[..., None]
+del ndl, ndh, edge_l, top
 
 print('serigraphie...')
 # ------------------------------------------------------------------ 2. panneaux noirs (serigraphie satinee), pastilles RANGE / TYPE
@@ -167,8 +172,15 @@ def occlusion(mask, strength=1.0):
     o = np.clip(contact * 0.5 + soft * 0.8, 0, 0.45) * strength * (1.0 - mask) * body
     img = img * (1.0 - o)[..., None]
 occ = np.zeros((H, W), np.float32)
-for (c, R) in ((RANGE_C, SKIRT_R), (TYPE_C, TYPE_R), (FS, FS_FLATS * 0.56)):
+for (c, R) in ((RANGE_C, SKIRT_R), (TYPE_C, TYPE_R)):
     occ = np.maximum(occ, np.clip((R - np.hypot(UX - c[0], UY - c[1])) * AS, 0, 1))
+# footswitch : occlusion d'apres la silhouette hexagonale de l'ecrou (plus de disque clair autour des pans)
+FSPR, _refl, FS_W, FS_BTN = PC.footswitch_sprite(FS_FLATS, AS)
+fs_x0, fs_y0 = (FS[0] - FS_W / 2) * AS, (FS[1] - FS_W / 2) * AS
+_nut = np.clip((FSPR[..., 3] / 255.0 - 0.9) / 0.1, 0, 1).astype(np.float32)
+_X0, _Y0 = int(round(fs_x0)), int(round(fs_y0))
+occ[_Y0:_Y0 + _nut.shape[0], _X0:_X0 + _nut.shape[1]] = np.maximum(occ[_Y0:_Y0 + _nut.shape[0], _X0:_X0 + _nut.shape[1]], _nut)
+del _nut
 occlusion(occ)
 del occ
 
@@ -187,8 +199,6 @@ for (lx, ly) in LEDS:
 LED_RING = LED_LENS * 1.07
 
 # ------------------------------------------------------------------ 7. footswitch (photo du kit, reference Echoflex) + version enfoncee
-FSPR, _refl, FS_W, FS_BTN = PC.footswitch_sprite(FS_FLATS, AS)
-fs_x0, fs_y0 = (FS[0] - FS_W / 2) * AS, (FS[1] - FS_W / 2) * AS
 over(img, FSPR, fs_x0, fs_y0)
 
 def pressed_footswitch():
@@ -237,7 +247,7 @@ for side in (-1, 1):
     o[y0:y0 + jh, x0:x0 + jw] = j[..., 3] / 255.0
     contact = cv2.GaussianBlur(o, (0, 0), 3.0 * AS)
     soft = cv2.GaussianBlur(o, (0, 0), 16.0 * AS)
-    oc = np.clip(contact * 0.9 + soft * 1.5, 0, 0.55) * (0.7 if side < 0 else 0.25)   # lumiere a gauche : ombre plus marquee a gauche
+    oc = np.clip(contact * 0.9 + soft * 1.5, 0, 0.55) * (0.0 if side < 0 else 0.25)   # OUT (gauche) : pas d'ombre sur le boitier (demande de l'utilisateur)
     img *= (1.0 - oc * body)[..., None]
     over(img, j, x0, y0)
     alpha = np.maximum(alpha, o)
@@ -270,6 +280,7 @@ gyy, gxx = np.mgrid[0:gh, 0:gw].astype(np.float32)
 gux, guy = (gxx + gx0 + 0.5) / AS, (gyy + gy0 + 0.5) / AS
 lumr = reg.mean(2, keepdims=True)
 col = np.array([1.0, 0.20, 0.10], np.float32)
+GLOW_GAIN = 1.10                                   # eclairement des LED +10 % (demande de l'utilisateur, v1.3.1)
 order = [[4], [3, 5], [2, 6], [1, 7], [0, 8]]
 lit_i, layers = [], []
 for st in order:
@@ -282,6 +293,7 @@ for st in order:
         e = 1.0 * h1 ** 3 / (d ** 2 + h1 ** 2) ** 1.5 + 0.16 * h2 ** 3 / (d ** 2 + h2 ** 2) ** 1.5
         e[d < LED_RING] = 0.0
         E += e
+    E *= GLOW_GAIN
     lit = reg + (reg * 2.4 + 14.0 * np.clip(lumr / 40.0, 0.3, 1.6)) * E[..., None] * col
     add = lit - reg
     a = np.clip(np.abs(add).max(-1) / 12.0, 0, 1)
@@ -368,7 +380,10 @@ for lab, x0, d in (('OUT', BX0 + 38.0, -1), ('IN', BX1 - 38.0, 1)):
 TITLE_EM, TITLE_TRACK = 62.0, 3.0
 text('FREAKOUT', CX, TITLE_Y, TITLE_EM, 'bold', TITLE_TRACK)
 tw = width('FREAKOUT', TITLE_EM, 'bold', TITLE_TRACK)
-text('HARMONIC  FEEDBACK  GENERATOR', CX, SUB_Y, 13.0, 'medium', 3.4)
+SUB_S, SUB_EM = 'HARMONIC  FEEDBACK  GENERATOR', 13.0
+_w0 = width(SUB_S, SUB_EM, 'medium', 0.0)
+SUB_TRACK = (tw - _w0) / (len(SUB_S) - 1) - 0.12     # sous-titre de la meme largeur que FREAKOUT (encre), v1.3.1
+text(SUB_S, CX, SUB_Y, SUB_EM, 'medium', SUB_TRACK)
 WAVE = []
 xa, xb = FRAME[0] + 14.0, FRAME[0] + FRAME[2] - 14.0
 g0, g1 = CX - tw / 2 - 10.0, CX + tw / 2 + 10.0
