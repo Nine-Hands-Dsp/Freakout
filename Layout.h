@@ -11,7 +11,7 @@ namespace layout
     const float skirtR = 64.00f, capR = 37.00f, typeR = 42.00f;
     // repere creme des potards (photo) : de 0,28 a 0,90 du rayon sur le dessus
     const juce::Point<float> momentaryPos { 274.00f, 164.00f }, dryPos { 274.00f, 360.00f }; const float togS = 116.00f;
-    const juce::Point<float> fsPos { 308.75f, 768.00f }; const float footR = 40.16f, fsS = 201.40f;
+    const juce::Point<float> fsPos { 308.75f, 768.00f }; const float footR = 38.97f, fsS = 201.40f;
     const juce::Rectangle<float> displayRect { 84.00f, 478.00f, 449.50f, 86.00f }, statusRect { 96.00f, 484.00f, 425.50f, 40.00f }, presetRect { 96.00f, 528.00f, 425.50f, 28.00f };
     const float jackY = 521.00f;
     // cadre grave (x, y, w, h, rayon), dessine en vectoriel

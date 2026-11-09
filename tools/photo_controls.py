@@ -17,7 +17,7 @@ KIT = os.path.join(os.path.dirname(HERE), 'assets', 'kit')
 
 KNOB_C, KNOB_RPX = (402.1, 406.3), 341.0          # potard fourni pour FreakOut (nov. 2026) : centre et rayon exterieur (px)
 IND_R0, IND_R1, IND_W = 0.27, 0.955, 0.040         # repere creme de la photo : rayons debut / fin et demi-largeur (x rayon)
-FS_C, FS_FLATS_PX, FS_BTN_PX = (625.5, 618.0), 718.0, 272.0   # footswitch : centre, distance entre plats, rayon du bouton
+FS_C, FS_FLATS_PX, FS_BTN_PX = (627.0, 618.5), 729.0, 268.0   # footswitch : centre, distance entre plats, rayon du bouton
 
 
 def _load(name):

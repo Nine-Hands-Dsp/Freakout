@@ -69,7 +69,7 @@ génère aussi `Layout.h` et `tools/layout.json`. Textes, traits, points, cadre 
 dessinés en vectoriel par l'éditeur, nets à toutes les tailles.
 Captures réelles : `tools/render` (compile la vraie fenêtre sous Linux).
 Polices : Poppins (interface) et Barlow Condensed (notice), licence SIL OFL, `assets/fonts`.
-Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.1.pdf` (français).
+Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.2.pdf` (français).
 
 - v1.0.2 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v1.1.0 : MIDI Learn au clic droit sur chaque commande (Clear MIDI, assignations sauvegardées avec le projet)
@@ -78,3 +78,4 @@ Notice : `python3 tools/manual.py design/renders docs/FreakOut_Notice_FR_v1.3.1.
 - v1.2.2 : boutons de téléchargement dans le README
 - v1.3.0 : pédale entièrement refaite au format 1235 × 1800 avec le kit photo (potards, LED, footswitch, jacks, inverseurs), sérigraphie et cadre vectoriels, menus clic droit au design d'Octopus, notice en français
 - v1.3.1 : texture d'aluminium brossé fournie par l'utilisateur, plus d'ombre autour du jack OUT, lumière des LED +10 %, colonnes FEEDBACK et MOMENTARY / DRY alignées sur l'écran, titre et sous-titre centrés à l'encre et de même largeur, plus de disque clair autour du footswitch
+- v1.3.2 : nouvelle texture d'aluminium brossé en une seule plaque haute résolution (sans raccord ni pixellisation), nouveau footswitch (photo de l'utilisateur)

@@ -112,14 +112,15 @@ ndl = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1)
 ndh = np.clip(nx * HV[0] + ny * HV[1] + nz * HV[2], 0, 1)
 flat = np.clip((hgt - EDGE + 0.4) / 0.4, 0, 1)                 # 1 sur le dessus, 0 sur l'arete
 del hgt, nx, ny, nz
-# texture d'aluminium brosse fournie par l'utilisateur (assets/kit/texture_alu_brosse.jpg, 4096 px, stries horizontales),
-# a l'echelle 1 (le fond final est reduit de moitie), legere modulation par la lumiere : reflet diagonal + degrade haut / bas
+# texture d'aluminium brosse fournie par l'utilisateur (assets/kit/texture_alu_brosse.jpg, 2048 px, stries horizontales) :
+# une seule plaque, sans raccord, mise a la hauteur de la pedale (Lanczos) puis recadree au centre ; le fond final
+# (1800 px de haut) garde ainsi presque toute la resolution de la photo
 tex = cv2.imread(os.path.join(ROOT, 'assets', 'kit', 'texture_alu_brosse.jpg'))[..., ::-1].astype(np.float32)
-th, tw = tex.shape[:2]
-if th < H or tw < W:
-    tex = np.tile(tex, (H // th + 1, W // tw + 1, 1))
+sc = max(H / tex.shape[0], W / tex.shape[1])
+tex = cv2.resize(tex, (int(math.ceil(tex.shape[1] * sc)), int(math.ceil(tex.shape[0] * sc))), interpolation=cv2.INTER_LANCZOS4)
 ty0, tx0 = (tex.shape[0] - H) // 2, (tex.shape[1] - W) // 2
-tex = tex[ty0:ty0 + H, tx0:tx0 + W]
+tex = np.clip(tex[ty0:ty0 + H, tx0:tx0 + W], 0, 255)
+tex *= 170.0 / tex.mean()                                    # niveau moyen du metal de la pedale
 sheen = 0.55 + 0.45 * np.exp(-((UX - 210 - (UY - 300) * 0.22) / 210.0) ** 2)
 grad = 1.0 - 0.09 * (UY / FH) + 0.04 * (1 - UX / FW)
 light = (0.90 + 0.17 * sheen) * grad * 1.03
