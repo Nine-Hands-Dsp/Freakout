@@ -337,9 +337,10 @@ tri(ax_ + 4.0, ay1, ax_ - 0.5, ay1 - 9.0, ax_ + 8.5, ay1 - 9.0, LIGHT)
 
 # colonne MOMENTARY / DRY
 bx = PANEL_B[0] + PANEL_B[2] / 2
-for title_, (tx, ty), em in (('MOMENTARY', TOG['momentary'], 14.0), ('DRY', TOG['dry'], 16.0)):
-    text(title_, bx, ty - 96.0, em, 'bold', 1.6, LIGHT)
-    line(bx - 44.0, ty - 82.0, bx + 44.0, ty - 82.0, 1.3, LIGHT)
+for title_, (tx, ty), em, trk in (('MOMENTARY', TOG['momentary'], 14.0, 0.9), ('DRY', TOG['dry'], 16.0, 1.6)):
+    text(title_, bx, ty - 96.0, em, 'bold', trk, LIGHT)
+    hw = width(title_, em, 'bold', trk) / 2 - 0.8                   # filet de la largeur du mot (v1.3.4)
+    line(bx - hw, ty - 82.0, bx + hw, ty - 82.0, 1.3, LIGHT)
     text('ON', bx, ty - 58.0, 13.0, 'medium', 2.0, LIGHT)
     text('OFF', bx, ty + 60.0, 13.0, 'medium', 2.0, LIGHT)
 line(PANEL_B[0], TOG['dry'][1] - 116.0, PANEL_B[0] + PANEL_B[2], TOG['dry'][1] - 116.0, 2.4, LIGHT)

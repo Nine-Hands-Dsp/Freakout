@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "1.3.4"
+VERSION = "1.3.5"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -115,7 +115,7 @@ else:
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import svg_raster
 _white = os.path.join(TMP, "nine_hands_logo_blanc.svg")
-open(_white, "w").write(open(os.path.join(ROOT, "NineHandsLogo.svg")).read().replace('fill="#000000"', 'fill="#FFFFFF"'))
+open(_white, "w").write(open(os.path.join(ROOT, "NineHandsLogo.svg")).read().replace('fill="#000000"', 'fill="#FFFFFF"').replace('fill="#FFFFFF" d="M2080', 'fill="#919496" d="M2080'))
 LOGO_PNG = os.path.join(TMP, "nine_hands_logo_blanc.png")
 Image.fromarray(svg_raster.render(_white, 1200)).save(LOGO_PNG)
 
