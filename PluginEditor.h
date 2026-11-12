@@ -4,6 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Layout.h"
 #include "NineHandsMenu.h"
+#include "NineHandsWindow.h"
 
 //==============================================================================
 // Potard concentrique RANGE : chapeau central = GAIN, jupe moletee = ONSET.
@@ -148,8 +149,14 @@ private:
     void useSoftwareRenderer();
     void visibilityChanged() override;
     void askRepaint (juce::Rectangle<int> r);
+public:
+    juce::PopupMenu buildContextMenu (int learnIdx = -1);   // menu clic droit (aussi pour l'outil de controle des menus)
+    void setGlowPercent (int pc);                            // clic droit > Glow intensity
+private:
+    int glowPc = 100;                      // clic droit > Glow intensity : lumiere des LED sur la facade (25 a 100 %)
+    double lastGlowReadMs = 0.0;
+    float glowAmt() const { return (float) glowPc / 100.0f; }
     void showContextMenu (int learnIdx = -1);     // learnIdx >= 0 : clic droit sur une commande (MIDI Learn en tete du menu)
-    void addMidiMenu (juce::PopupMenu& menu, int learnIdx);
     void handleMidiMenu (int r);
     void showPresetMenu();
     void stepPreset (int delta);
@@ -167,6 +174,7 @@ private:
 
     FreakoutAudioProcessor& proc;
     FreakoutLookAndFeel lnf;
+    NineHandsWindow::HostLock hostLock;    // fenetre du DAW : jamais sous 60 %, jamais au-dela de 150 %
 
     juce::Image background, bgScaled, glowStrip, glowScaled[5], ledOn, ledOnS;
     int cacheW = 0, cacheH = 0;

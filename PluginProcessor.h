@@ -79,6 +79,7 @@ public:
     static juce::StringArray sensNames()  { return { "Low", "Normal", "High" }; }
 
     // ---- informations pour la fenetre ----
+    std::atomic<int> uiSizeIdx { -1 };   // taille de fenetre choisie au menu pour ce projet (-1 = taille par defaut)
     std::atomic<int>   currentPreset { 0 };
     std::atomic<int>   presetCounter { 0 };
     std::atomic<int>   lastMidiCC { -1 }, midiCounter { 0 };

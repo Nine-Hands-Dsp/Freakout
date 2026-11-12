@@ -6,7 +6,7 @@ if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "" FORCE)
 endif()
 
-project(FreakOut VERSION 1.3.5)
+project(FreakOut VERSION 1.4.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +40,7 @@ juce_add_plugin(FreakOut
   FORMATS VST3
   VST3_CATEGORIES Fx Generator
   PRODUCT_NAME "FreakOut"
-  VERSION 1.3.5
+  VERSION 1.4.0
   DESCRIPTION "Natural harmonic feedback generator (FreqOut style) - single pedal format"
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT TRUE
@@ -51,6 +51,17 @@ juce_add_plugin(FreakOut
 
 target_sources(FreakOut PRIVATE PluginProcessor.cpp PluginEditor.cpp)
 
+
+# verrou de taille de la fenetre du DAW (jamais sous 60 %, jamais au-dela de 150 %)
+if(APPLE)
+  target_sources(FreakOut PRIVATE WindowMinSize.mm)
+  target_link_libraries(FreakOut PRIVATE "-framework Cocoa")
+else()
+  target_sources(FreakOut PRIVATE WindowMinSize.cpp)
+endif()
+if(WIN32)
+  target_link_libraries(FreakOut PRIVATE comctl32 user32)
+endif()
 if(MSVC)
   target_compile_options(FreakOut PRIVATE /utf-8)
 endif()

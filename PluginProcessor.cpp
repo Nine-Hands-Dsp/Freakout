@@ -362,6 +362,7 @@ void FreakoutAudioProcessor::getStateInformation (MemoryBlock& dest)
 {
     auto state = apvts.copyState();
     state.setProperty ("currentPreset", currentPreset.load(), nullptr);
+    state.setProperty ("uiSize", uiSizeIdx.load(), nullptr);
     for (int i = 0; i < numLearn; ++i)
         state.setProperty (String ("cc_") + learnDef (i).id, ccMap[i].load(), nullptr);
     if (auto xml = state.createXml()) copyXmlToBinary (*xml, dest);
@@ -374,6 +375,7 @@ void FreakoutAudioProcessor::setStateInformation (const void* data, int size)
         {
             auto state = ValueTree::fromXml (*xml);
             currentPreset = (int) state.getProperty ("currentPreset", 0);
+            uiSizeIdx = jlimit (-1, 2, (int) state.getProperty ("uiSize", -1));
             // assignations MIDI Learn (-1 = non assigne ; projet sans ces proprietes : rien d'assigne)
             // ancien projet dont la table est exactement l'ancienne table d'usine (CC 20 a 25) : jamais modifiee -> videe
             int loaded[numLearn];
